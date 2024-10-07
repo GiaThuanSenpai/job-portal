@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.job_portal.DTO.CVDTO;
 import com.job_portal.models.CV;
@@ -13,6 +14,7 @@ import com.job_portal.repository.CVRepository;
 import com.job_portal.repository.SeekerRepository;
 import com.social.exceptions.AllExceptions;
 
+@Service
 public class CVServiceImpl implements ICVService {
 
 	@Autowired

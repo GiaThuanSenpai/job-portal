@@ -66,24 +66,23 @@ public class AuthController {
 	private UserTypeRepository userTypeRepository;
 
 	@PostMapping("/signup")
-	public AuthResponse createUserAccount(@RequestBody UserAccount userAccount) throws Exception {
+	public ResponseEntity<String> createUserAccount(@RequestBody UserAccount userAccount) throws Exception {
 		UserAccount isExist = userAccountRepository.findByEmail(userAccount.getEmail());
 		if (isExist != null) {
-			throw new Exception("This email is already used with another account");
+			throw new Exception("Email này đã được sử dụng ở tài khoản khác");
 		}
 		String otp = otpUtil.generateOtp();
 		try {
 			emailUtil.sendOtpEmail(userAccount.getEmail(), otp);
 		} catch (MessagingException e) {
-			throw new RuntimeException("Unable to send OTP. Please try again");
+			throw new RuntimeException("Không thể gửi OTP, vui lòng thử lại");
 		}
 
-		UserType userType = userTypeRepository.findById(userAccount.getUserType().getUserTypeId())
-				.orElseThrow(() -> new Exception("Invalid user type"));
+		Optional<UserType> userType = userTypeRepository.findById(userAccount.getUserType().getUserTypeId());
 		UserAccount newUser = new UserAccount();
 		newUser.setUserId(UUID.randomUUID());
-		newUser.setUserType(userType);
-		newUser.setActive(false); 
+		newUser.setUserType(userType.get());
+		newUser.setActive(false);
 		newUser.setEmail(userAccount.getEmail());
 		newUser.setPassword(passwordEncoder.encode(userAccount.getPassword()));
 		newUser.setUserName(userAccount.getUserName());
@@ -91,23 +90,23 @@ public class AuthController {
 		newUser.setOtp(otp);
 		newUser.setOtpGeneratedTime(LocalDateTime.now());
 
-		UserAccount savedUser = userAccountRepository.save(newUser);
+//		UserAccount savedUser = userAccountRepository.save(newUser);
+//
+//		Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser.getEmail(),
+//				savedUser.getPassword());
+//
+//		String token = JwtProvider.generateToken(authentication);
+//		AuthResponse res = new AuthResponse(token, "Register Success");
 
-		Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser.getEmail(),
-				savedUser.getPassword());
+		userAccountRepository.save(newUser);
 
-		String token = JwtProvider.generateToken(authentication);
-		AuthResponse res = new AuthResponse(token, "Register Success");
-
-		return res;
+		return ResponseEntity.ok("Vui lòng check email đã nhận mã đăng ký");
 	}
 
 	@PutMapping("/verify-account")
 	public ResponseEntity<String> verifyAccount(@RequestParam String email, @RequestParam String otp) {
 		UserAccount user = userAccountRepository.findByEmail(email);
-		if (user == null) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with email: " + email);
-		}
+
 		if (user.getOtp().equals(otp)
 				&& Duration.between(user.getOtpGeneratedTime(), LocalDateTime.now()).getSeconds() < (2 * 60)) {
 
@@ -116,30 +115,23 @@ public class AuthController {
 			user.setOtpGeneratedTime(null);
 
 			if (user.getUserType().getUserTypeId() == 2) {
-				Integer defaultIndustryId = 1; 
+				Integer defaultIndustryId = 1;
 				Optional<Industry> defaultIndustryOpt = industryRepository.findById(defaultIndustryId);
-				if (defaultIndustryOpt.isEmpty()) {
-					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Default industry not found.");
-				}
+
 				Industry defaultIndustry = defaultIndustryOpt.get();
 				Seeker seeker = new Seeker();
 				seeker.setUserAccount(user);
 				seeker.setIndustry(defaultIndustry);
 				user.setSeeker(seeker);
-				userAccountRepository.save(user);	
-			}
-			else if(user.getUserType().getUserTypeId() == 3) {
-				Integer defaultIndustryId = 1; 
+				userAccountRepository.save(user);
+			} else if (user.getUserType().getUserTypeId() == 3) {
+				Integer defaultIndustryId = 1;
 				Optional<Industry> defaultIndustryOpt = industryRepository.findById(defaultIndustryId);
-				if (defaultIndustryOpt.isEmpty()) {
-					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Default industry not found.");
-				}
-				
-				Integer defaultCityId = 0; 
+
+
+				Integer defaultCityId = 0;
 				Optional<City> defaultCityOpt = cityRepository.findById(defaultCityId);
-				if (defaultCityOpt.isEmpty()) {
-					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Default City not found.");
-				}
+
 				Industry defaultIndustry = defaultIndustryOpt.get();
 				City defaultCity = defaultCityOpt.get();
 				Company company = new Company();
@@ -149,28 +141,28 @@ public class AuthController {
 				user.setCompany(company);
 				userAccountRepository.save(user);
 			}
-			return ResponseEntity.ok("OTP verified and account activated");
+			return ResponseEntity.ok("Đăng ký tài khoản thành công");
 		} else {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please regenerate otp and try again");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Xác thực OPT thất bại, vui lòng nhập lại email");
 		}
 	}
 
 	@PutMapping("/regenerate-otp")
 	public String regenerateOtp(@RequestParam String email) {
 		UserAccount user = userAccountRepository.findByEmail(email);
-		if (user == null) {
-			throw new RuntimeException("User not found with email: " + email);
-		}
+//		if (user == null) {
+//			throw new RuntimeException("User not found with email: " + email);
+//		}
 		String otp = otpUtil.generateOtp();
 		try {
 			emailUtil.sendOtpEmail(email, otp);
 		} catch (MessagingException e) {
-			throw new RuntimeException("Unable to send OTP. Please try again");
+			throw new RuntimeException("Không thể gửi email, vui lòng thử lại");
 		}
 		user.setOtp(otp);
 		user.setOtpGeneratedTime(LocalDateTime.now());
 		userAccountRepository.save(user);
-		return "Email send... please verify";
+		return "Vui lòng check email đã nhận mã đăng ký";
 	}
 
 	@PostMapping("/login")
@@ -178,13 +170,13 @@ public class AuthController {
 		AuthResponse res;
 		UserAccount user = userAccountRepository.findByEmail(login.getEmail());
 		if (!user.isActive()) {
-			return res = new AuthResponse("", "Your account is not verified");
+			return res = new AuthResponse("", "Tài khoản của bạn chưa được xác thực");
 		}
 		Authentication authentication = authenticate(login.getEmail(), login.getPassword());
 		String token = JwtProvider.generateToken(authentication);
 		user.setLastLogin(LocalDateTime.now());
 		userAccountRepository.save(user);
-		res = new AuthResponse(token, "Login Success");
+		res = new AuthResponse(token, "Đăng nhập thành công");
 
 		return res;
 	}
@@ -192,11 +184,11 @@ public class AuthController {
 	private Authentication authenticate(String email, String password) {
 		UserDetails userDetails = accountDetailService.loadUserByUsername(email);
 		if (userDetails == null) {
-			throw new BadCredentialsException("Invalid username");
+			throw new BadCredentialsException("Tài khoản không hợp lệ");
 
 		}
 		if (!passwordEncoder.matches(password, userDetails.getPassword())) {
-			throw new BadCredentialsException("Password not matched");
+			throw new BadCredentialsException("Password không đúng");
 
 		}
 		return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

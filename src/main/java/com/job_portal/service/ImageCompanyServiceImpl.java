@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.job_portal.DTO.ImageDTO;
 import com.job_portal.models.City;
@@ -17,6 +18,7 @@ import com.job_portal.repository.CompanyRepository;
 import com.job_portal.repository.ImageRepository;
 import com.social.exceptions.AllExceptions;
 
+@Service
 public class ImageCompanyServiceImpl implements IImageCompanyService {
 
 	@Autowired
