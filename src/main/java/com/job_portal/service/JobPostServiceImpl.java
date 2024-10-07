@@ -1,5 +1,6 @@
 package com.job_portal.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,9 +14,11 @@ import com.job_portal.models.Company;
 import com.job_portal.models.Industry;
 import com.job_portal.models.JobPost;
 import com.job_portal.models.Seeker;
+import com.job_portal.models.Skills;
 import com.job_portal.repository.CityRepository;
 import com.job_portal.repository.CompanyRepository;
 import com.job_portal.repository.JobPostRepository;
+import com.job_portal.repository.SkillRepository;
 import com.social.exceptions.AllExceptions;
 
 @Service
@@ -27,6 +30,9 @@ public class JobPostServiceImpl implements IJobPostService {
 	CityRepository cityRepository;
 	@Autowired
 	CompanyRepository companyRepository;
+	
+	@Autowired
+	private SkillRepository skillRepository;
 
 	@Override
 	public boolean createJob(JobPostDTO jobPostDTO, UUID companyId) {
@@ -54,6 +60,20 @@ public class JobPostServiceImpl implements IJobPostService {
 		jobPost.setCity(city);
 		jobPost.setApprove(false);
 		jobPost.setNiceToHaves(jobPostDTO.getNiceToHaves());
+		
+		 // Liên kết với Skills nếu có
+        if (jobPostDTO.getSkillIds() != null && !jobPostDTO.getSkillIds().isEmpty()) {
+            List<Skills> skillsList = new ArrayList<>();
+            for (Integer skillId : jobPostDTO.getSkillIds()) {
+                Optional<Skills> skillOpt = skillRepository.findById(skillId);
+                if (!skillOpt.isPresent()) {
+                    throw new RuntimeException("Skill không tồn tại với ID: " + skillId);
+                }
+                skillsList.add(skillOpt.get());
+            }
+            jobPost.setSkills(skillsList);
+        }
+
 		// Save the JobPost entity
 		try {
 			JobPost saveJobPost = jobPostRepository.save(jobPost);
@@ -76,7 +96,7 @@ public class JobPostServiceImpl implements IJobPostService {
 	}
 
 	@Override
-	public boolean updateJob(JobPost jobPost, UUID postId, UUID companyId, Integer cityId) throws AllExceptions {
+	public boolean updateJob(JobPostDTO jobPostDTO,UUID postId) throws AllExceptions {
 		// Tìm kiếm Company theo id
 		Optional<JobPost> existingJob = jobPostRepository.findById(postId);
 
@@ -89,96 +109,94 @@ public class JobPostServiceImpl implements IJobPostService {
 		boolean isUpdated = false;
 
 		// Cập nhật các trường cơ bản
-		if (jobPost.getCreateDate() != null) {
-			oldJob.setCreateDate(jobPost.getCreateDate());
+		if (jobPostDTO.getCreateDate() != null) {
+			oldJob.setCreateDate(jobPostDTO.getCreateDate());
 			isUpdated = true;
 		}
 
 		// Cập nhật các trường cơ bản
-		if (jobPost.getExpireDate() != null) {
-			oldJob.setExpireDate(jobPost.getExpireDate());
+		if (jobPostDTO.getExpireDate() != null) {
+			oldJob.setExpireDate(jobPostDTO.getExpireDate());
 			isUpdated = true;
 		}
 
 		// Cập nhật các trường cơ bản
-		if (jobPost.getTitle() != null) {
-			oldJob.setTitle(jobPost.getTitle());
+		if (jobPostDTO.getTitle() != null) {
+			oldJob.setTitle(jobPostDTO.getTitle());
 			isUpdated = true;
 		}
 		// Cập nhật các trường cơ bản
-		if (jobPost.getDescription() != null) {
-			oldJob.setDescription(jobPost.getDescription());
-			isUpdated = true;
-		}
-
-		// Cập nhật các trường cơ bản
-		if (jobPost.getBenefit() != null) {
-			oldJob.setBenefit(jobPost.getBenefit());
+		if (jobPostDTO.getDescription() != null) {
+			oldJob.setDescription(jobPostDTO.getDescription());
 			isUpdated = true;
 		}
 
 		// Cập nhật các trường cơ bản
-		if (jobPost.getExperience() != null) {
-			oldJob.setExperience(jobPost.getExperience());
+		if (jobPostDTO.getBenefit() != null) {
+			oldJob.setBenefit(jobPostDTO.getBenefit());
 			isUpdated = true;
 		}
 
-		if (jobPost.getSalary() != null) {
-			oldJob.setSalary(jobPost.getSalary());
+		// Cập nhật các trường cơ bản
+		if (jobPostDTO.getExperience() != null) {
+			oldJob.setExperience(jobPostDTO.getExperience());
 			isUpdated = true;
 		}
 
-		if (jobPost.getRequirement() != null) {
-			oldJob.setRequirement(jobPost.getRequirement());
-			isUpdated = true;
-		}
-		if (jobPost.getLocation() != null) {
-			oldJob.setLocation(jobPost.getLocation());
-			isUpdated = true;
-		}
-		if (jobPost.getTypeOfWork() != null) {
-			oldJob.setTypeOfWork(jobPost.getTypeOfWork());
-			isUpdated = true;
-		}
-		if (jobPost.getPosition() != null) {
-			oldJob.setPosition(jobPost.getPosition());
+		if (jobPostDTO.getSalary() != null) {
+			oldJob.setSalary(jobPostDTO.getSalary());
 			isUpdated = true;
 		}
 
-		if (jobPost.getStatus() != null) {
-			oldJob.setStatus(jobPost.getStatus());
+		if (jobPostDTO.getRequirement() != null) {
+			oldJob.setRequirement(jobPostDTO.getRequirement());
+			isUpdated = true;
+		}
+		if (jobPostDTO.getLocation() != null) {
+			oldJob.setLocation(jobPostDTO.getLocation());
+			isUpdated = true;
+		}
+		if (jobPostDTO.getTypeOfWork() != null) {
+			oldJob.setTypeOfWork(jobPostDTO.getTypeOfWork());
+			isUpdated = true;
+		}
+		if (jobPostDTO.getPosition() != null) {
+			oldJob.setPosition(jobPostDTO.getPosition());
+			isUpdated = true;
+		}
+
+		if (jobPostDTO.getStatus() != null) {
+			oldJob.setStatus(jobPostDTO.getStatus());
 			isUpdated = true;
 		}
 		
-		if (jobPost.getNiceToHaves() != null) {
-			oldJob.setNiceToHaves(jobPost.getNiceToHaves());
+		if (jobPostDTO.getNiceToHaves() != null) {
+			oldJob.setNiceToHaves(jobPostDTO.getNiceToHaves());
 			isUpdated = true;
 		}
 
-		// Tìm Industry mới dựa trên industryId
-		if (companyId != null) {
-			Optional<Company> newCompany = companyRepository.findById(companyId);
-			if (newCompany.isEmpty()) {
-				throw new AllExceptions("Company not exist with id " + companyId);
-			}
-			// Cập nhật Industry nếu khác
-			if (!newCompany.get().equals(oldJob.getCompany())) {
-				oldJob.setCompany(newCompany.get());
-				isUpdated = true;
-			}
-		}
-
-		// Tìm Industry mới dựa trên industryId
-		if (cityId != null) {
-			Optional<City> newCity = cityRepository.findById(cityId);
+		if (jobPostDTO.getCityId() != null) {
+			Optional<City> newCity = cityRepository.findById(jobPostDTO.getCityId());
 			if (newCity.isEmpty()) {
-				throw new AllExceptions("City not exist with id " + cityId);
+				throw new AllExceptions("City not exist");
 			}
 			// Cập nhật Industry nếu khác
 			if (!newCity.get().equals(oldJob.getCity())) {
 				oldJob.setCity(newCity.get());
 				isUpdated = true;
 			}
+		}
+		if (jobPostDTO.getSkillIds() != null) {
+			List<Skills> skillsList = new ArrayList<>();
+			for (Integer skillId : jobPostDTO.getSkillIds()) {
+				Optional<Skills> skillOpt = skillRepository.findById(skillId);
+				if (!skillOpt.isPresent()) {
+					throw new RuntimeException("Skill không tồn tại với ID: " + skillId);
+				}
+				skillsList.add(skillOpt.get());
+			}
+			oldJob.setSkills(skillsList);
+			isUpdated = true; // Thêm dòng này
 		}
 
 		if (isUpdated) {

@@ -10,7 +10,7 @@ import com.social.exceptions.AllExceptions;
 public interface IJobPostService {
 	public boolean createJob(JobPostDTO jobPostDTO, UUID companyId);
 	public boolean deleteJob(UUID postId) throws AllExceptions;
-	public boolean updateJob(JobPost jobPost,UUID postId, UUID companyId, Integer cityId) throws AllExceptions;	
+	public boolean updateJob(JobPostDTO jobPost, UUID postId) throws AllExceptions;	
 	public List<JobPost> searchJobByJobName(String title) throws AllExceptions;
 	public List<JobPost> searchJobByExperience(String experience) throws AllExceptions;
 	public List<JobPost> searchJobByCity(Integer cityId) throws AllExceptions;

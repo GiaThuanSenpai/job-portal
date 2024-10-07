@@ -54,10 +54,7 @@ public class ApplyJob {
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
     private Seeker seeker;
 
-   
-
     public ApplyJob() {
-
 	}
 
 	public ApplyJob(UUID postId, UUID userId, String pathCV, LocalDateTime applyDate, boolean isSave, String fullName,

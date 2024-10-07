@@ -20,7 +20,7 @@ import jakarta.persistence.Table;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+
 public class Experience {
 
     @Id

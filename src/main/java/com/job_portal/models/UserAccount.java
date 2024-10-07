@@ -53,7 +53,6 @@ public class UserAccount {
     @Column(name = "last_login", nullable = true)
     private LocalDateTime lastLogin;
     
-    
     private String otp;
 	private LocalDateTime otpGeneratedTime;
 	
@@ -64,7 +63,6 @@ public class UserAccount {
 	@JsonIgnore
 	@OneToOne(mappedBy = "userAccount", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Company company;
-
 
 	public UserAccount(UUID userId, UserType userType, boolean isActive, String userName, String avatar, String email,
 			String password, LocalDateTime createDate, LocalDateTime lastLogin, String otp,

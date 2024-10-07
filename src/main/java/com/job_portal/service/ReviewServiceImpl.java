@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.job_portal.models.Company;
 import com.job_portal.models.JobPost;
@@ -15,6 +16,7 @@ import com.job_portal.repository.CompanyRepository;
 import com.job_portal.repository.ReviewRepository;
 import com.social.exceptions.AllExceptions;
 
+@Service
 public class ReviewServiceImpl implements IReviewService {
 
 	@Autowired
@@ -51,8 +53,16 @@ public class ReviewServiceImpl implements IReviewService {
 
 	@Override
 	public List<Review> findReviewByCompanyId(UUID companyId) throws AllExceptions {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			List<Review> reviews = reviewRepository.findReviewByCompanyId(companyId);
+			if (reviews.isEmpty()) {
+				throw new AllExceptions("Không tìm thấy đánh giá nào");
+			}
+
+			return reviews;
+		} catch (Exception e) {
+			throw new AllExceptions(e.getMessage());
+		}
 	}
 
 }

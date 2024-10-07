@@ -1,5 +1,7 @@
 package com.job_portal.service;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -7,10 +9,16 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.job_portal.DTO.SeekerDTO;
+import com.job_portal.DTO.SocialLinkDTO;
 import com.job_portal.models.Industry;
 import com.job_portal.models.Seeker;
+import com.job_portal.models.Skills;
+import com.job_portal.models.SocialLink;
 import com.job_portal.repository.IndustryRepository;
 import com.job_portal.repository.SeekerRepository;
+import com.job_portal.repository.SkillRepository;
+import com.job_portal.repository.UserAccountRepository;
 import com.social.exceptions.AllExceptions;
 
 @Service
@@ -21,6 +29,12 @@ public class SeekerServiceImpl implements ISeekerService {
 
 	@Autowired
 	private IndustryRepository industryRepository;
+
+	@Autowired
+	private SkillRepository skillRepository;
+
+	@Autowired
+	private UserAccountRepository accountRepository;
 
 	@Override
 	public boolean deleteSeeker(UUID userId) throws AllExceptions {
@@ -35,72 +49,134 @@ public class SeekerServiceImpl implements ISeekerService {
 	}
 
 	@Override
-	public boolean updateSeeker(Seeker seeker, UUID userId, Integer industryId) throws AllExceptions {
-		// Tìm kiếm Company theo id
-		Optional<Seeker> existingSeeker = seekerRepository.findById(userId);
+	public boolean updateSeeker(SeekerDTO seekerDTO, UUID userId) throws AllExceptions {
+	    // Tìm kiếm Seeker theo id
+	    Optional<Seeker> existingSeekerOpt = seekerRepository.findById(userId);
 
-		if (existingSeeker.isEmpty()) {
-			throw new AllExceptions("Seeker not exist with id " + userId);
-		}
+	    if (existingSeekerOpt.isEmpty()) {
+	        throw new AllExceptions("Seeker not exist with id " + userId);
+	    }
 
-		// Lấy đối tượng Company cũ
-		Seeker oldSeeker = existingSeeker.get();
-		boolean isUpdated = false;
+	    // Lấy đối tượng Seeker cũ
+	    Seeker oldSeeker = existingSeekerOpt.get();
+	    boolean isUpdated = false;
 
-		// Cập nhật các trường cơ bản
-		if (seeker.getAddress() != null) {
-			oldSeeker.setAddress(seeker.getAddress());
-			isUpdated = true;
-		}
+	    // Cập nhật các trường cơ bản
+	    if (seekerDTO.getAddress() != null) {
+	        oldSeeker.setAddress(seekerDTO.getAddress());
+	        isUpdated = true;
+	    }
+	    if (seekerDTO.getGender() != null) {
+	        oldSeeker.setGender(seekerDTO.getGender());
+	        isUpdated = true;
+	    }
+	    if (seekerDTO.getDateOfBirth() != null) {
+	        oldSeeker.setDateOfBirth(seekerDTO.getDateOfBirth());
+	        isUpdated = true;
+	    }
+	    if (seekerDTO.getPhoneNumber() != null) {
+	        oldSeeker.setPhoneNumber(seekerDTO.getPhoneNumber());
+	        isUpdated = true;
+	    }
+	    if (seekerDTO.getDescription() != null) {
+	        oldSeeker.setDescription(seekerDTO.getDescription());
+	        isUpdated = true;
+	    }
+	    if (seekerDTO.getEmailContact() != null) {
+	        oldSeeker.setEmailContact(seekerDTO.getEmailContact());
+	        isUpdated = true;
+	    }
 
-		// Cập nhật các trường cơ bản
-		if (seeker.getGender() != null) {
-			oldSeeker.setGender(seeker.getAddress());
-			isUpdated = true;
-		}
+	    // Cập nhật Industry
+	    if (seekerDTO.getIndustryId() != null) {
+	        Optional<Industry> newIndustry = industryRepository.findById(seekerDTO.getIndustryId());
+	        if (newIndustry.isEmpty()) {
+	            throw new AllExceptions("Industry not exist");
+	        }
+	        if (!newIndustry.get().equals(oldSeeker.getIndustry())) {
+	            oldSeeker.setIndustry(newIndustry.get());
+	            isUpdated = true;
+	        }
+	    }
 
-		// Cập nhật các trường cơ bản
-		if (seeker.getDateOfBirth() != null) {
-			oldSeeker.setDateOfBirth(seeker.getDateOfBirth());
-			isUpdated = true;
-		}
-		// Cập nhật các trường cơ bản
-		if (seeker.getPhoneNumber() != null) {
-			oldSeeker.setPhoneNumber(seeker.getPhoneNumber());
-			isUpdated = true;
-		}
+	    // Cập nhật danh sách kỹ năng
+	    if (seekerDTO.getSkillIds() != null) {
+	        List<Skills> skillsList = new ArrayList<>();
+	        for (Integer skillId : seekerDTO.getSkillIds()) {
+	            Optional<Skills> skillOpt = skillRepository.findById(skillId);
+	            if (skillOpt.isEmpty()) {
+	                throw new RuntimeException("Skill không tồn tại với ID: " + skillId);
+	            }
+	            skillsList.add(skillOpt.get());
+	        }
+	        oldSeeker.setSkills(skillsList);
+	        isUpdated = true; 
+	    }
 
-		// Cập nhật các trường cơ bản
-		if (seeker.getDescription() != null) {
-			oldSeeker.setDescription(seeker.getDescription());
-			isUpdated = true;
-		}
+	    // Cập nhật danh sách SocialLink
+	    if (seekerDTO.getSocialLinks() != null) {
+	        List<SocialLink> existingSocialLinks = oldSeeker.getSocialLinks();
 
-		// Cập nhật các trường cơ bản
-		if (seeker.getEmailContact() != null) {
-			oldSeeker.setEmailContact(seeker.getEmailContact());
-			isUpdated = true;
-		}
+	        for (SocialLinkDTO socialLinkDTO : seekerDTO.getSocialLinks()) {
+	            boolean found = false;
 
-		// Tìm Industry mới dựa trên industryId
-		if (industryId != null) {
-			Optional<Industry> newIndustry = industryRepository.findById(industryId);
-			if (newIndustry.isEmpty()) {
-				throw new AllExceptions("Industry not exist with id " + industryId);
-			}
-			// Cập nhật Industry nếu khác
-			if (!newIndustry.get().equals(oldSeeker.getIndustry())) {
-				oldSeeker.setIndustry(newIndustry.get());
-				isUpdated = true;
-			}
-		}
+	            for (SocialLink existingLink : existingSocialLinks) {
+	                if (existingLink.getSocialName().equals(socialLinkDTO.getSocialName())) {
+	                    existingLink.setLink(socialLinkDTO.getLink());
+	                    found = true;
+	                    break;
+	                }
+	            }
+	            if (!found) {
+	                SocialLink newSocialLink = new SocialLink();
+	                newSocialLink.setUserId(userId);
+	                newSocialLink.setSocialName(socialLinkDTO.getSocialName());
+	                newSocialLink.setLink(socialLinkDTO.getLink());
+	                newSocialLink.setSeeker(oldSeeker);
+	                existingSocialLinks.add(newSocialLink);
+	            }
+	        }
 
-		if (isUpdated) {
-			seekerRepository.save(oldSeeker);
-		}
+	        existingSocialLinks.removeIf(existingLink ->
+	            seekerDTO.getSocialLinks().stream()
+	                .noneMatch(newLink -> newLink.getSocialName().equals(existingLink.getSocialName()))
+	        );
 
-		return isUpdated;
+	        isUpdated = true; 
+	    }
+
+	    // Lưu lại đối tượng Seeker đã cập nhật nếu có thay đổi
+	    if (isUpdated) {
+	        seekerRepository.save(oldSeeker);
+	    }
+
+	    return isUpdated;
 	}
+
+	
+	@Override
+	public boolean deleteSocialLink(UUID userId, String socialName) throws AllExceptions {
+	    // Tìm kiếm Seeker của người dùng
+	    Optional<Seeker> seekerOpt = seekerRepository.findById(userId);
+	    if (seekerOpt.isEmpty()) {
+	        throw new AllExceptions("Seeker not found with userId: " + userId);
+	    }
+	    
+	    Seeker seeker = seekerOpt.get();
+	    // Tìm kiếm và xóa SocialLink
+	    Iterator<SocialLink> iterator = seeker.getSocialLinks().iterator();
+	    while (iterator.hasNext()) {
+	        SocialLink socialLink = iterator.next();
+	        if (socialLink.getSocialName().equalsIgnoreCase(socialName)) {
+	            iterator.remove(); // Xóa SocialLink khỏi danh sách
+	            seekerRepository.save(seeker); // Lưu lại Seeker
+	            return true; // Đã xóa thành công
+	        }
+	    }
+	    return false; // Không tìm thấy SocialLink
+	}
+
+
 
 	@Override
 	public List<Seeker> searchSeekerByName(String userName) throws AllExceptions {

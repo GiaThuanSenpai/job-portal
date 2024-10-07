@@ -68,49 +68,24 @@ public class JobPostController {
 		}
 	}
 
-	 @PostMapping("/approve/{postId}")
-	    public ResponseEntity<String> approveJobPost(@PathVariable UUID postId) {
-	        boolean isApproved = jobPostService.approveJob(postId);
-	        if (isApproved) {
-	            return ResponseEntity.ok("Job post approved successfully.");
-	        } else {
-	            return ResponseEntity.status(404).body("Job post not found.");
-	        }
-	    }
+	@PostMapping("/approve/{postId}")
+	public ResponseEntity<String> approveJobPost(@PathVariable UUID postId) {
+		boolean isApproved = jobPostService.approveJob(postId);
+		if (isApproved) {
+			return ResponseEntity.ok("Job post approved successfully.");
+		} else {
+			return ResponseEntity.status(404).body("Job post not found.");
+		}
+	}
+
 	@PutMapping("/update-job/{postId}")
 	public ResponseEntity<String> updateJobPost(@RequestHeader("Authorization") String jwt,
-			@RequestBody JobPostDTO jobPost, @PathVariable("postId") UUID postId) {
-		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
-
-		Optional<JobPost> reqJob = jobPostRepository.findById(postId);
-		if (reqJob.isEmpty()) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		}
-		try {
-			JobPost newJob = new JobPost();
-			newJob.setCreateDate(jobPost.getCreateDate());
-			newJob.setExpireDate(jobPost.getExpireDate());
-			newJob.setTitle(jobPost.getTitle());
-			newJob.setDescription(jobPost.getDescription());
-			newJob.setBenefit(jobPost.getBenefit());
-			newJob.setExperience(jobPost.getExperience());
-			newJob.setSalary(jobPost.getSalary());
-			newJob.setRequirement(jobPost.getRequirement());
-			newJob.setLocation(jobPost.getLocation());
-			newJob.setTypeOfWork(jobPost.getTypeOfWork());
-			newJob.setPosition(jobPost.getPosition());
-			newJob.setStatus(jobPost.getStatus());
-			newJob.setNiceToHaves(jobPost.getNiceToHaves());
-			boolean isUpdated = jobPostService.updateJob(newJob, reqJob.get().getPostId(),
-					user.getCompany().getCompanyId(), jobPost.getCityId());
-			if (isUpdated) {
-				return new ResponseEntity<>("Update Job success", HttpStatus.CREATED);
-			} else {
-				return new ResponseEntity<>("Update Job failed", HttpStatus.BAD_REQUEST);
-			}
-		} catch (Exception e) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+			@RequestBody JobPostDTO jobPost, @PathVariable("postId") UUID postId) throws AllExceptions {
+		boolean isUpdated = jobPostService.updateJob(jobPost, postId);
+		if (isUpdated) {
+			return new ResponseEntity<>("Update Job success", HttpStatus.CREATED);
+		} else {
+			return new ResponseEntity<>("Update Job failed", HttpStatus.BAD_REQUEST);
 		}
 	}
 
@@ -172,7 +147,7 @@ public class JobPostController {
 					.body("Đã xảy ra lỗi trong quá trình xử lý yêu cầu.");
 		}
 	}
-	
+
 	@GetMapping("/salary/{minSalary}")
 	public ResponseEntity<Object> findBySalaryGreaterThanEqual(@RequestParam("minSalary") Long minSalary) {
 		try {
@@ -187,6 +162,7 @@ public class JobPostController {
 					.body("Đã xảy ra lỗi trong quá trình xử lý yêu cầu.");
 		}
 	}
+
 	@GetMapping("/salary/{maxSalary}")
 	public ResponseEntity<Object> findBySalaryLessThanEqual(@RequestParam("maxSalary") Long maxSalary) {
 		try {
@@ -201,9 +177,9 @@ public class JobPostController {
 					.body("Đã xảy ra lỗi trong quá trình xử lý yêu cầu.");
 		}
 	}
+
 	@GetMapping("/salary-between")
-	public ResponseEntity<Object> findBySalaryBetween( @RequestParam Long minSalary,
-            @RequestParam Long maxSalary) {
+	public ResponseEntity<Object> findBySalaryBetween(@RequestParam Long minSalary, @RequestParam Long maxSalary) {
 		try {
 			List<JobPost> jobs = jobPostService.findBySalaryBetween(minSalary, maxSalary);
 			return ResponseEntity.ok(jobs);

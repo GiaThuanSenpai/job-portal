@@ -9,10 +9,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -81,6 +84,9 @@ public class JobPost {
     @Lob
     @Column(name = "nice_to_haves", columnDefinition = "MEDIUMTEXT")
     private String niceToHaves;
+    
+    @ManyToMany
+	private List<Skills> skills = new ArrayList<>();
 
     // Optional: Add auditing fields like createdBy, updatedBy, etc.
 }

@@ -1,10 +1,8 @@
 package com.job_portal.DTO;
 
 import java.time.LocalDate;
-import java.util.UUID;
-
-import com.job_portal.models.Industry;
-import com.job_portal.models.UserAccount;
+import java.util.ArrayList;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,4 +21,6 @@ public class SeekerDTO {
     private String description;
     private String emailContact;
     private Integer industryId; 
+    private List<Integer> skillIds; // Danh sách ID của Skills
+    private List<SocialLinkDTO> socialLinks = new ArrayList<>();
 }

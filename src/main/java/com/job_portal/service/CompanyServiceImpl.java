@@ -10,11 +10,11 @@ import org.springframework.stereotype.Service;
 import com.job_portal.models.City;
 import com.job_portal.models.Company;
 import com.job_portal.models.Industry;
+import com.job_portal.models.Seeker;
 import com.job_portal.repository.CityRepository;
 import com.job_portal.repository.CompanyRepository;
 import com.job_portal.repository.IndustryRepository;
 import com.social.exceptions.AllExceptions;
-
 @Service
 public class CompanyServiceImpl implements ICompanyService {
 
@@ -26,6 +26,8 @@ public class CompanyServiceImpl implements ICompanyService {
 	CityRepository cityRepository;
 	@Autowired
 	IndustryRepository industryRepository;
+	@Autowired
+	ISeekerService seekerService;
 
 	@Override
 	public boolean deleteCompany(UUID companyId) throws AllExceptions {
@@ -183,6 +185,20 @@ public class CompanyServiceImpl implements ICompanyService {
 		} catch (Exception e) {
 			throw new AllExceptions(e.getMessage());
 		}
+	}
+
+	@Override
+	public Company followCompany(UUID companyId, UUID userId) throws AllExceptions {
+		
+		Company company = findCompanyById(companyId);
+		Seeker seeker = seekerService.findSeekerById(userId);
+
+		if (company.getFollows().contains(seeker)) {
+			company.getFollows().remove(seeker);
+		} else {
+			company.getFollows().add(seeker);
+		}
+		return companyRepository.save(company);
 	}
 
 }

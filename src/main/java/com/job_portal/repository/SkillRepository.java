@@ -7,10 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.job_portal.models.JobPost;
 import com.job_portal.models.Review;
+import com.job_portal.models.Skills;
 
-public interface ReviewRepository extends JpaRepository<Review, UUID> {
+public interface SkillRepository extends JpaRepository<Skills, Integer>{
 	@Query("SELECT r FROM Review r WHERE r.company.companyId = :companyId")
-	public List<Review> findReviewByCompanyId(@Param("companyId") UUID companyId);
+	public List<Skills> findReviewByCompanyId(@Param("companyId") UUID companyId);
 }

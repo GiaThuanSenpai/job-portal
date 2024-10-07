@@ -20,7 +20,6 @@ public class Industry {
     private String industryName;
 
 	public Industry() {
-
 	}
 
 	public Industry(int industryId, String industryName) {
@@ -44,7 +43,5 @@ public class Industry {
 	public void setIndustryName(String industryName) {
 		this.industryName = industryName;
 	}
-    
-
 }
 

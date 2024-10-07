@@ -3,11 +3,12 @@ package com.job_portal.controller;
 import java.util.List;
 import java.util.Optional;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -69,34 +70,35 @@ public class SeekerController {
 					.body("Đã xảy ra lỗi trong quá trình xử lý yêu cầu.");
 		}
 	}
-	
-	@PutMapping("/update-seeker")
-	public ResponseEntity<String> updateSeeker(@RequestHeader("Authorization") String jwt, @RequestBody SeekerDTO seeker) {
+
+	@DeleteMapping("/delete-social/{socialName}")
+	public ResponseEntity<String> deleteSocialLink(@RequestHeader("Authorization") String jwt,
+			@PathVariable("socialName") String socialName) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
 		UserAccount user = userAccountRepository.findByEmail(email);
-		
-		Optional<Seeker> reqSeeker = seekerRepository.findById(user.getUserId());
-		if (reqSeeker.isEmpty()) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		}
 		try {
-			Seeker newSeeker = new Seeker();
-			newSeeker.setAddress(seeker.getAddress());
-			newSeeker.setGender(seeker.getGender());
-			newSeeker.setDateOfBirth(seeker.getDateOfBirth());
-			newSeeker.setAddress(seeker.getAddress());
-			newSeeker.setPhoneNumber(seeker.getPhoneNumber());
-			newSeeker.setEmailContact(seeker.getAddress());
-			newSeeker.setDescription(seeker.getDescription());
-			newSeeker.setEmailContact(seeker.getEmailContact());
-			boolean isUpdated = seekerService.updateSeeker(newSeeker, reqSeeker.get().getUserId(), seeker.getIndustryId());
-			if (isUpdated) {
-				return new ResponseEntity<>("Update Seeker success", HttpStatus.CREATED);
+			boolean isDeleted = seekerService.deleteSocialLink(user.getUserId(), socialName);
+			if (isDeleted) {
+				return ResponseEntity.ok("SocialLink deleted successfully.");
 			} else {
-				return new ResponseEntity<>("Update Seeker failed", HttpStatus.BAD_REQUEST);
+				return ResponseEntity.status(404).body("SocialLink not found.");
 			}
-		} catch (Exception e) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		} catch (AllExceptions e) {
+			return ResponseEntity.status(400).body(e.getMessage());
+		}
+	}
+
+	@PutMapping("/update-seeker")
+	public ResponseEntity<String> updateSeeker(@RequestHeader("Authorization") String jwt,
+			@RequestBody SeekerDTO seeker) throws AllExceptions {
+		String email = JwtProvider.getEmailFromJwtToken(jwt);
+		UserAccount user = userAccountRepository.findByEmail(email);
+
+		boolean isUpdated = seekerService.updateSeeker(seeker, user.getUserId());
+		if (isUpdated) {
+			return new ResponseEntity<>("Update Seeker success", HttpStatus.CREATED);
+		} else {
+			return new ResponseEntity<>("Update Seeker failed", HttpStatus.BAD_REQUEST);
 		}
 	}
 }

@@ -2,6 +2,7 @@ package com.job_portal.DTO;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -30,4 +31,5 @@ public class JobPostDTO {
 	private UUID companyId;
 	private boolean isApprove;
 	private String niceToHaves;
+	private List<Integer> skillIds; // Danh sách ID của Skills
 }

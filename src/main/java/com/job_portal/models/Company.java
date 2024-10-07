@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToMany;
@@ -65,6 +66,9 @@ public class Company {
 	
 	@OneToMany
 	private List<Review> reviews = new ArrayList<>();
+	
+	@ManyToMany
+	private List<Seeker> follows = new ArrayList<>();
 	
 	@OneToOne
     @MapsId
