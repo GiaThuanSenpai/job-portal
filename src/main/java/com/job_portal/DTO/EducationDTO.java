@@ -18,7 +18,7 @@ public class EducationDTO {
 
     private Integer educationId;
 
-    private Boolean certificateDegreeName;
+    private String certificateDegreeName;
 
     private String major;
 

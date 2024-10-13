@@ -53,10 +53,6 @@ public class SeekerServiceImpl implements ISeekerService {
 	    // Tìm kiếm Seeker theo id
 	    Optional<Seeker> existingSeekerOpt = seekerRepository.findById(userId);
 
-	    if (existingSeekerOpt.isEmpty()) {
-	        throw new AllExceptions("Seeker not exist with id " + userId);
-	    }
-
 	    // Lấy đối tượng Seeker cũ
 	    Seeker oldSeeker = existingSeekerOpt.get();
 	    boolean isUpdated = false;
@@ -90,9 +86,6 @@ public class SeekerServiceImpl implements ISeekerService {
 	    // Cập nhật Industry
 	    if (seekerDTO.getIndustryId() != null) {
 	        Optional<Industry> newIndustry = industryRepository.findById(seekerDTO.getIndustryId());
-	        if (newIndustry.isEmpty()) {
-	            throw new AllExceptions("Industry not exist");
-	        }
 	        if (!newIndustry.get().equals(oldSeeker.getIndustry())) {
 	            oldSeeker.setIndustry(newIndustry.get());
 	            isUpdated = true;
@@ -104,9 +97,6 @@ public class SeekerServiceImpl implements ISeekerService {
 	        List<Skills> skillsList = new ArrayList<>();
 	        for (Integer skillId : seekerDTO.getSkillIds()) {
 	            Optional<Skills> skillOpt = skillRepository.findById(skillId);
-	            if (skillOpt.isEmpty()) {
-	                throw new RuntimeException("Skill không tồn tại với ID: " + skillId);
-	            }
 	            skillsList.add(skillOpt.get());
 	        }
 	        oldSeeker.setSkills(skillsList);

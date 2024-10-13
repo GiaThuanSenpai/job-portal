@@ -24,25 +24,12 @@ public class ApplyJobServiceImpl implements IApplyJobService {
 	JobPostRepository jobPostRepository;
 	@Autowired
 	SeekerRepository seekerRepository;
+
 	@Override
 	public boolean createApplyJob(ApplyJob applyJob) throws AllExceptions {
+		ApplyJob saveApplyJob = applyJobRepository.save(applyJob);
+		return saveApplyJob != null;
 
-		// Kiểm tra tồn tại của JobPosts và SeekerProfile
-		Optional<JobPost> jobPost = jobPostRepository.findById(applyJob.getPostId());
-		if (!jobPost.isPresent()) {
-			throw new IllegalArgumentException("JobPost không tồn tại với postId: " + applyJob.getPostId());
-		}
-
-		Optional<Seeker> seeker = seekerRepository.findById(applyJob.getUserId());
-		if (!seeker.isPresent()) {
-			throw new IllegalArgumentException("SeekerProfile không tồn tại với userId: " + applyJob.getUserId());
-		}
-		try {
-			ApplyJob saveApplyJob = applyJobRepository.save(applyJob);
-			return saveApplyJob != null;
-		} catch (Exception e) {
-			return false;
-		}
 	}
 
 	@Override

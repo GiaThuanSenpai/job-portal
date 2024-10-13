@@ -75,9 +75,9 @@ public class SeekerController {
 	public ResponseEntity<String> deleteSocialLink(@RequestHeader("Authorization") String jwt,
 			@PathVariable("socialName") String socialName) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 		try {
-			boolean isDeleted = seekerService.deleteSocialLink(user.getUserId(), socialName);
+			boolean isDeleted = seekerService.deleteSocialLink(user.get().getUserId(), socialName);
 			if (isDeleted) {
 				return ResponseEntity.ok("SocialLink deleted successfully.");
 			} else {
@@ -92,13 +92,13 @@ public class SeekerController {
 	public ResponseEntity<String> updateSeeker(@RequestHeader("Authorization") String jwt,
 			@RequestBody SeekerDTO seeker) throws AllExceptions {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 
-		boolean isUpdated = seekerService.updateSeeker(seeker, user.getUserId());
+		boolean isUpdated = seekerService.updateSeeker(seeker, user.get().getUserId());
 		if (isUpdated) {
-			return new ResponseEntity<>("Update Seeker success", HttpStatus.CREATED);
+			return new ResponseEntity<>("Cập nhật thông tin thành công", HttpStatus.CREATED);
 		} else {
-			return new ResponseEntity<>("Update Seeker failed", HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<>("Cập nhật thông tin thất bại", HttpStatus.BAD_REQUEST);
 		}
 	}
 }

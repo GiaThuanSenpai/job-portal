@@ -1,5 +1,7 @@
 package com.job_portal.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -8,6 +10,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.job_portal.DTO.DailyJobCount;
 import com.job_portal.DTO.JobPostDTO;
 import com.job_portal.models.City;
 import com.job_portal.models.Company;
@@ -36,11 +39,11 @@ public class JobPostServiceImpl implements IJobPostService {
 
 	@Override
 	public boolean createJob(JobPostDTO jobPostDTO, UUID companyId) {
-		City city = cityRepository.findById(jobPostDTO.getCityId())
-				.orElseThrow(() -> new IllegalArgumentException("Invalid City ID"));
+		Optional<City> city = cityRepository.findById(jobPostDTO.getCityId());
 
-		Company company = companyRepository.findById(companyId)
-				.orElseThrow(() -> new IllegalArgumentException("Invalid Company ID"));
+
+		Optional<Company> company = companyRepository.findById(companyId);
+
 
 		// Build the JobPost entity
 		JobPost jobPost = new JobPost();
@@ -56,8 +59,8 @@ public class JobPostServiceImpl implements IJobPostService {
 		jobPost.setTypeOfWork(jobPostDTO.getTypeOfWork());
 		jobPost.setPosition(jobPostDTO.getPosition());
 		jobPost.setStatus(jobPostDTO.getStatus());
-		jobPost.setCompany(company);
-		jobPost.setCity(city);
+		jobPost.setCompany(company.get());
+		jobPost.setCity(city.get());
 		jobPost.setApprove(false);
 		jobPost.setNiceToHaves(jobPostDTO.getNiceToHaves());
 		
@@ -66,9 +69,6 @@ public class JobPostServiceImpl implements IJobPostService {
             List<Skills> skillsList = new ArrayList<>();
             for (Integer skillId : jobPostDTO.getSkillIds()) {
                 Optional<Skills> skillOpt = skillRepository.findById(skillId);
-                if (!skillOpt.isPresent()) {
-                    throw new RuntimeException("Skill không tồn tại với ID: " + skillId);
-                }
                 skillsList.add(skillOpt.get());
             }
             jobPost.setSkills(skillsList);
@@ -88,7 +88,7 @@ public class JobPostServiceImpl implements IJobPostService {
 		Optional<JobPost> jobPost = jobPostRepository.findById(postId);
 
 		if (jobPost.isEmpty()) {
-			throw new AllExceptions("Seeker not exist with id: " + postId);
+			throw new AllExceptions("Không thể tìm thấy công việc này");
 		}
 
 		jobPostRepository.delete(jobPost.get());
@@ -99,10 +99,6 @@ public class JobPostServiceImpl implements IJobPostService {
 	public boolean updateJob(JobPostDTO jobPostDTO,UUID postId) throws AllExceptions {
 		// Tìm kiếm Company theo id
 		Optional<JobPost> existingJob = jobPostRepository.findById(postId);
-
-		if (existingJob.isEmpty()) {
-			throw new AllExceptions("Job not exist with id " + postId);
-		}
 
 		// Lấy đối tượng Company cũ
 		JobPost oldJob = existingJob.get();
@@ -177,9 +173,7 @@ public class JobPostServiceImpl implements IJobPostService {
 
 		if (jobPostDTO.getCityId() != null) {
 			Optional<City> newCity = cityRepository.findById(jobPostDTO.getCityId());
-			if (newCity.isEmpty()) {
-				throw new AllExceptions("City not exist");
-			}
+
 			// Cập nhật Industry nếu khác
 			if (!newCity.get().equals(oldJob.getCity())) {
 				oldJob.setCity(newCity.get());
@@ -190,9 +184,6 @@ public class JobPostServiceImpl implements IJobPostService {
 			List<Skills> skillsList = new ArrayList<>();
 			for (Integer skillId : jobPostDTO.getSkillIds()) {
 				Optional<Skills> skillOpt = skillRepository.findById(skillId);
-				if (!skillOpt.isPresent()) {
-					throw new RuntimeException("Skill không tồn tại với ID: " + skillId);
-				}
 				skillsList.add(skillOpt.get());
 			}
 			oldJob.setSkills(skillsList);
@@ -211,7 +202,7 @@ public class JobPostServiceImpl implements IJobPostService {
 		try {
 			List<JobPost> jobs = jobPostRepository.findJobByJobName(title);
 			if (jobs.isEmpty()) {
-				throw new AllExceptions("Không tìm thấy công việc nào với tên: " + title);
+				throw new AllExceptions("Không tìm thấy công việc nào");
 			}
 
 			return jobs;
@@ -314,4 +305,22 @@ public class JobPostServiceImpl implements IJobPostService {
 		return false; // Trả về false nếu không tìm thấy công việc
 	}
 
+	@Override
+	public JobPost searchJobByPostId(UUID postId) throws AllExceptions {
+		Optional<JobPost> jobPost = jobPostRepository.findById(postId);
+		return jobPost.get();
+		
+	}
+	public List<DailyJobCount> getDailyJobPostCounts(LocalDateTime startDate, LocalDateTime endDate) {
+        List<Object[]> results = jobPostRepository.countNewJobsPerDay(startDate, endDate);
+        List<DailyJobCount> dailyJobPostCounts = new ArrayList<>();
+
+        for (Object[] result : results) {
+            LocalDate date = ((java.sql.Date) result[0]).toLocalDate();
+            Long count = ((Number) result[1]).longValue();
+            dailyJobPostCounts.add(new DailyJobCount(date, count));
+        }
+
+        return dailyJobPostCounts;
+    }
 }

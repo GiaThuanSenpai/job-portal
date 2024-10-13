@@ -32,7 +32,7 @@ public class Education {
     private Integer educationId;
 
     @Column(name = "certificate_degree_name", nullable = false)
-    private Boolean certificateDegreeName;
+    private String certificateDegreeName;
 
     @Column(name = "major", length = 100, nullable = false)
     private String major;

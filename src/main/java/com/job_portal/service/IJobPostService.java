@@ -1,8 +1,10 @@
 package com.job_portal.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import com.job_portal.DTO.DailyJobCount;
 import com.job_portal.DTO.JobPostDTO;
 import com.job_portal.models.JobPost;
 import com.social.exceptions.AllExceptions;
@@ -18,4 +20,6 @@ public interface IJobPostService {
 	public List<JobPost> findBySalaryLessThanEqual(Long maxSalary) throws AllExceptions;
 	public List<JobPost> findBySalaryBetween(Long minSalary, Long maxSalary) throws AllExceptions;
 	public boolean approveJob(UUID postId);
+	public JobPost searchJobByPostId(UUID postId) throws AllExceptions;
+	public List<DailyJobCount> getDailyJobPostCounts(LocalDateTime startDate, LocalDateTime endDate);
 }

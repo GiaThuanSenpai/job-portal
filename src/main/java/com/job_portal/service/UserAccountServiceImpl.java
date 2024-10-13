@@ -1,5 +1,8 @@
 package com.job_portal.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -7,6 +10,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.job_portal.DTO.DailyAccountCount;
 import com.job_portal.config.JwtProvider;
 import com.job_portal.models.UserAccount;
 import com.job_portal.repository.UserAccountRepository;
@@ -21,15 +25,15 @@ public class UserAccountServiceImpl implements IUserAccountService {
 	@Override
 	public UserAccount findUserByJwt(String jwt) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
-		return user;
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
+		return user.get();
 	}
 
 
 	@Override
 	public UserAccount findUserByEmail(String email) {
-		UserAccount userAccount = userAccountRepository.findByEmail(email);
-		return userAccount;
+		Optional<UserAccount> userAccount = userAccountRepository.findByEmail(email);
+		return userAccount.get();
 	}
 
 	@Override
@@ -92,5 +96,22 @@ public class UserAccountServiceImpl implements IUserAccountService {
 		throw new AllExceptions("User not exist with user_id " + userId);
 		
 	}
+
+
+	@Override
+	public List<DailyAccountCount> getDailyAccountCounts(LocalDateTime startDate, LocalDateTime endDate) {
+        List<Object[]> results = userAccountRepository.countNewAccountsPerDay(startDate, endDate);
+        List<DailyAccountCount> dailyAccountCounts = new ArrayList<>();
+
+        for (Object[] result : results) {
+            LocalDate date = ((java.sql.Date) result[0]).toLocalDate();
+            Long count = ((Number) result[1]).longValue();
+            dailyAccountCounts.add(new DailyAccountCount(date, count));
+        }
+
+        return dailyAccountCounts;
+    }
+
+
 
 }

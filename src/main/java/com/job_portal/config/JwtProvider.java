@@ -4,16 +4,26 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import com.job_portal.repository.BlackListTokenRepository;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.JwtParserBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtProvider {
+	@Autowired
+	private BlackListTokenRepository blackListTokenRepository;
+
+	public boolean isTokenBlacklisted(String token) {
+		return blackListTokenRepository.existsByToken(token);
+	}
 
 	private static final SecretKey key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
 
@@ -22,9 +32,8 @@ public class JwtProvider {
 		System.out.println("Generating JWT for email: " + auth.getName());
 
 		String jwt = Jwts.builder().setIssuer("GiaThuanSenpai").setIssuedAt(new Date())
-				.setExpiration(new Date(new Date().getTime() + 86400000))
-				.claim("email", auth.getName()) 
-				.signWith(key).compact();
+				.setExpiration(new Date(new Date().getTime() + 86400000)).claim("email", auth.getName()).signWith(key)
+				.compact();
 		return jwt;
 	}
 
@@ -38,5 +47,28 @@ public class JwtProvider {
 
 		String email = String.valueOf(claims.get("email"));
 		return email;// Ensure this retrieves the correct claim
+	}
+
+	public boolean validateToken(String token) {
+		try {
+			// Kiểm tra nếu token nằm trong danh sách đen
+			if (isTokenBlacklisted(token)) {
+				return false;
+			}
+
+			// Phân tích và xác thực token
+			((JwtParserBuilder) Jwts.builder()).setSigningKey(key).build().parseClaimsJws(token);
+
+			return true;
+		} catch (JwtException | IllegalArgumentException e) {
+			// Token không hợp lệ
+			return false;
+		}
+	}
+
+	public Date getExpirationDateFromJWT(String token) {
+		Claims claims = ((JwtParserBuilder) Jwts.builder()).setSigningKey(key).build().parseClaimsJws(token).getBody();
+
+		return claims.getExpiration();
 	}
 }

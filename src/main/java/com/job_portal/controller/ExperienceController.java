@@ -48,9 +48,9 @@ public class ExperienceController {
 	public ResponseEntity<String> createExperience(@RequestHeader("Authorization") String jwt,
 			@RequestBody ExperienceDTO experienceDTO) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 
-		boolean isCreated = experienceService.createExp(experienceDTO, user.getUserId());
+		boolean isCreated = experienceService.createExp(experienceDTO, user.get().getUserId());
 		if (isCreated) {
 			return new ResponseEntity<>("Experience created successfully.", HttpStatus.CREATED);
 		} else {
@@ -62,7 +62,7 @@ public class ExperienceController {
 	public ResponseEntity<String> updateJobPost(@RequestHeader("Authorization") String jwt,
 			@RequestBody ExperienceDTO experienceDTO, @PathVariable("experienceId") Integer experienceId) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 
 		Optional<Experience> reqExp = experienceRepository.findById(experienceId);
 		if (reqExp.isEmpty()) {
@@ -77,7 +77,7 @@ public class ExperienceController {
 			newExp.setCompanyName(experienceDTO.getCompanyName());
 			newExp.setDescription(experienceDTO.getDescription());
 			boolean isUpdated = experienceService.updateExp(newExp, reqExp.get().getExperienceId(),
-					user.getSeeker().getUserId());
+					user.get().getSeeker().getUserId());
 			if (isUpdated) {
 				return new ResponseEntity<>("Update Experience success", HttpStatus.CREATED);
 			} else {
@@ -105,9 +105,9 @@ public class ExperienceController {
 	@GetMapping("/user/{userId}")
 	public ResponseEntity<Object> searchExpByUserId(@RequestHeader("Authorization") String jwt) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 		try {
-			List<Experience> exps = experienceService.searchExpByUserId(user.getUserId());
+			List<Experience> exps = experienceService.searchExpByUserId(user.get().getUserId());
 			return ResponseEntity.ok(exps);
 		} catch (AllExceptions e) {
 			// Trả về thông báo từ service

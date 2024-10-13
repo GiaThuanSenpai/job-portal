@@ -42,8 +42,7 @@ public class ReviewController {
 	IReviewService reviewService;
 	@Autowired
 	SeekerRepository seekerRepository;
-	@Autowired
-	private CompanyRepository companyRepository;
+
 
 	@Autowired
 	private UserAccountRepository userAccountRepository;
@@ -60,14 +59,14 @@ public class ReviewController {
 			@RequestBody Review req,
 			@PathVariable("companyId") UUID companyId) throws AllExceptions {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
-		Optional<Seeker> seeker = seekerRepository.findById(user.getUserId());
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
+		Optional<Seeker> seeker = seekerRepository.findById(user.get().getUserId());
 		
 		boolean isCreated = reviewService.createReview(seeker.get(),companyId, req);
 		if (isCreated) {
-			return new ResponseEntity<>("Review created successfully", HttpStatus.CREATED);
+			return new ResponseEntity<>("Đánh giá thành công", HttpStatus.CREATED);
 		} else {
-			return new ResponseEntity<>("Failed to create review", HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<>("Đánh giá thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 	

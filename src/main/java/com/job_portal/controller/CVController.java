@@ -1,6 +1,7 @@
 package com.job_portal.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -49,13 +50,13 @@ public class CVController {
 	public ResponseEntity<String> createCV(@RequestHeader("Authorization") String jwt,
 			@RequestBody CVDTO cvdto) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 
-		boolean isCreated = cvService.createCV(cvdto, user.getUserId());
+		boolean isCreated = cvService.createCV(cvdto, user.get().getUserId());
 		if (isCreated) {
-			return new ResponseEntity<>("CV created successfully.", HttpStatus.CREATED);
+			return new ResponseEntity<>("Tạo CV thành công", HttpStatus.CREATED);
 		} else {
-			return new ResponseEntity<>("Failed to create CV.", HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<>("Tạo CV thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -65,9 +66,9 @@ public class CVController {
 		try {
 			boolean isDeleted = cvService.deleteCV(cvId);
 			if (isDeleted) {
-				return new ResponseEntity<>("CV deleted successfully", HttpStatus.OK);
+				return new ResponseEntity<>("Xóa CV thành công", HttpStatus.OK);
 			} else {
-				return new ResponseEntity<>("CV deletion failed", HttpStatus.INTERNAL_SERVER_ERROR);
+				return new ResponseEntity<>("Xóa CV thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		} catch (Exception e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
@@ -77,10 +78,10 @@ public class CVController {
 	@GetMapping("/searchCV")
 	public ResponseEntity<Object> searchCV(@RequestHeader("Authorization") String jwt) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 		try {
-			List<CV> imgs = cvService.findCVBySeekerId(user.getUserId());
-			return ResponseEntity.ok(imgs);
+			List<CV> cvs = cvService.findCVBySeekerId(user.get().getUserId());
+			return ResponseEntity.ok(cvs);
 		} catch (AllExceptions e) {
 			// Trả về thông báo từ service
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());

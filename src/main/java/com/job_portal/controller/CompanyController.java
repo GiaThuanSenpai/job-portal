@@ -1,6 +1,8 @@
 package com.job_portal.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,13 +23,12 @@ import com.job_portal.DTO.CompanyDTO;
 
 import com.job_portal.config.JwtProvider;
 import com.job_portal.models.Company;
-
+import com.job_portal.models.JobPost;
 import com.job_portal.models.UserAccount;
 import com.job_portal.repository.CompanyRepository;
 import com.job_portal.repository.UserAccountRepository;
 import com.job_portal.service.ICompanyService;
 import com.social.exceptions.AllExceptions;
-
 
 @RestController
 @RequestMapping("/company")
@@ -49,35 +50,33 @@ public class CompanyController {
 
 	@PutMapping("/update-company")
 	public ResponseEntity<String> updateCompany(@RequestHeader("Authorization") String jwt,
-			@RequestBody CompanyDTO company) {
+			@RequestBody CompanyDTO company) throws AllExceptions {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 
-		Optional<Company> reqCompany = companyRepository.findById(user.getUserId());
+		Optional<Company> reqCompany = companyRepository.findById(user.get().getUserId());
 		if (reqCompany.isEmpty()) {
 			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 		}
-		try {
-			Company newCompany = new Company();
-			newCompany.setCompanyName(company.getCompanyName());
-			newCompany.setAddress(company.getAddress());
-			newCompany.setDescription(company.getDescription());
-			newCompany.setLogo(company.getLogo());
-			newCompany.setContact(company.getContact());
-			newCompany.setEmail(company.getEmail());
-			newCompany.setEstablishedTime(company.getEstablished_date());
 
-			boolean isUpdated = companyService.updateCompany(newCompany, reqCompany.get().getCompanyId(),
-					company.getIndustryId(), company.getCityId());
-			if (isUpdated) {
-				return new ResponseEntity<>("Update Company success", HttpStatus.CREATED);
-			} else {
-				return new ResponseEntity<>("Update Company failed", HttpStatus.BAD_REQUEST);
-			}
-		} catch (Exception e) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		Company newCompany = new Company();
+		newCompany.setCompanyName(company.getCompanyName());
+		newCompany.setAddress(company.getAddress());
+		newCompany.setDescription(company.getDescription());
+		newCompany.setLogo(company.getLogo());
+		newCompany.setContact(company.getContact());
+		newCompany.setEmail(company.getEmail());
+		newCompany.setEstablishedTime(company.getEstablished_date());
+
+		boolean isUpdated = companyService.updateCompany(newCompany, reqCompany.get().getCompanyId(),
+				company.getIndustryId(), company.getCityId());
+		if (isUpdated) {
+			return new ResponseEntity<>("Cập nhật thông tin thành công", HttpStatus.CREATED);
+		} else {
+			return new ResponseEntity<>("Cập nhật thông tin thất bại", HttpStatus.BAD_REQUEST);
 		}
 	}
+
 
 	@GetMapping("/searchByName")
 	public ResponseEntity<Object> searchCompaniesByName(@RequestParam("companyName") String companyName) {
@@ -125,15 +124,30 @@ public class CompanyController {
 	}
 
 	@PutMapping("/follow/{companyId}")
-	public ResponseEntity<Company> followCompany(@PathVariable("companyId") UUID companyId,
+	public ResponseEntity<Map<String, Object>> followCompany(@PathVariable("companyId") UUID companyId,
 			@RequestHeader("Authorization") String jwt) throws Exception {
 
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount reqUser = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> reqUser = userAccountRepository.findByEmail(email);
 
-		Company company = companyService.followCompany(companyId, reqUser.getUserId());
+		Company company = companyService.followCompany(companyId, reqUser.get().getUserId());
 
-		return new ResponseEntity<Company>(company, HttpStatus.ACCEPTED);
+		// Create a response body
+		Map<String, Object> response = new HashMap<>();
+		response.put("message", "Theo dõi công ty thành công");
+		response.put("company", company);
 
+		return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
 	}
+	
+	@GetMapping("/profile-company/{companyId}")
+	public ResponseEntity<Company> getCompanyById(@PathVariable("companyId") UUID companyId) throws AllExceptions {
+		try {
+			Company company = companyService.findCompanyById(companyId);
+			return new ResponseEntity<>(company, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+		}
+	}
+
 }

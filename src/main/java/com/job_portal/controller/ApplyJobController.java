@@ -2,6 +2,7 @@ package com.job_portal.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,19 +34,19 @@ public class ApplyJobController {
 	@Autowired
 	IApplyJobService applyJobService;
 	@Autowired
-	UserAccountRepository userAccountRepository;
+	UserAccountRepository userAccountRepository; 
 
 	@PostMapping("/create-apply/{postId}")
 	public ResponseEntity<String> createApply(@RequestBody ApplyJobDTO applyDTO, @RequestHeader("Authorization") String jwt,
 			@PathVariable("postId") UUID postId) throws AllExceptions {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
-		ApplyJob apply = convertToEntity(applyDTO, user.getUserId(), postId );
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
+		ApplyJob apply = convertToEntity(applyDTO, user.get().getUserId(), postId );
 		boolean isCreated = applyJobService.createApplyJob(apply);
 		if (isCreated) {
-			return new ResponseEntity<>("Apply job successfully.", HttpStatus.CREATED);
+			return new ResponseEntity<>("Nộp đơn thành công", HttpStatus.CREATED);
 		} else {
-			return new ResponseEntity<>("Failed to apply job.", HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<>("Nộp đơn thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 	@PostMapping("/update-apply/{postId}")
@@ -53,8 +54,8 @@ public class ApplyJobController {
 			@PathVariable("postId") UUID postId) throws AllExceptions {
 		
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
-		ApplyJob apply = convertToEntity(applyDTO, user.getUserId(), postId);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
+		ApplyJob apply = convertToEntity(applyDTO, user.get().getUserId(), postId);
 		boolean isCreated = applyJobService.updateApplyJob(apply);
 		if (isCreated) {
 			return new ResponseEntity<>("Update successfully.", HttpStatus.CREATED);

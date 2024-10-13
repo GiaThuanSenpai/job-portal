@@ -1,5 +1,7 @@
 package com.job_portal.controller;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.job_portal.DTO.CompanyDTO;
+import com.job_portal.DTO.DailyJobCount;
 import com.job_portal.DTO.JobPostDTO;
 import com.job_portal.DTO.SeekerDTO;
 import com.job_portal.config.JwtProvider;
@@ -58,13 +61,13 @@ public class JobPostController {
 	public ResponseEntity<String> createJobPost(@RequestHeader("Authorization") String jwt,
 			@RequestBody JobPostDTO jobPostDTO) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 
-		boolean isCreated = jobPostService.createJob(jobPostDTO, user.getUserId());
+		boolean isCreated = jobPostService.createJob(jobPostDTO, user.get().getUserId());
 		if (isCreated) {
-			return new ResponseEntity<>("JobPost created successfully.", HttpStatus.CREATED);
+			return new ResponseEntity<>("Công việc được tạo thành công. Chờ Admin phê duyệt", HttpStatus.CREATED);
 		} else {
-			return new ResponseEntity<>("Failed to create JobPost.", HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<>("Công việc tạo thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -72,9 +75,9 @@ public class JobPostController {
 	public ResponseEntity<String> approveJobPost(@PathVariable UUID postId) {
 		boolean isApproved = jobPostService.approveJob(postId);
 		if (isApproved) {
-			return ResponseEntity.ok("Job post approved successfully.");
+			return ResponseEntity.ok("Chấp thuận thành công");
 		} else {
-			return ResponseEntity.status(404).body("Job post not found.");
+			return ResponseEntity.status(404).body("Không thể tìm thấy công việc");
 		}
 	}
 
@@ -83,20 +86,20 @@ public class JobPostController {
 			@RequestBody JobPostDTO jobPost, @PathVariable("postId") UUID postId) throws AllExceptions {
 		boolean isUpdated = jobPostService.updateJob(jobPost, postId);
 		if (isUpdated) {
-			return new ResponseEntity<>("Update Job success", HttpStatus.CREATED);
+			return new ResponseEntity<>("Cập nhật thành công", HttpStatus.CREATED);
 		} else {
-			return new ResponseEntity<>("Update Job failed", HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<>("Cập nhật thất bại", HttpStatus.BAD_REQUEST);
 		}
 	}
 
 	@DeleteMapping("/delete-job/{postId}")
-	public ResponseEntity<String> deleteUser(@PathVariable("postId") UUID postId) {
+	public ResponseEntity<String> deleteJob(@PathVariable("postId") UUID postId) {
 		try {
 			boolean isDeleted = jobPostService.deleteJob(postId);
 			if (isDeleted) {
-				return new ResponseEntity<>("Job deleted successfully", HttpStatus.OK);
+				return new ResponseEntity<>("Xóa thành công", HttpStatus.OK);
 			} else {
-				return new ResponseEntity<>("Job deletion failed", HttpStatus.INTERNAL_SERVER_ERROR);
+				return new ResponseEntity<>("Xóa thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		} catch (Exception e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
@@ -192,5 +195,25 @@ public class JobPostController {
 					.body("Đã xảy ra lỗi trong quá trình xử lý yêu cầu.");
 		}
 	}
+	@GetMapping("/findJob/{postId}")
+	public ResponseEntity<JobPost> getJobById(@PathVariable("postId") UUID postId) throws AllExceptions {
+		try {
+			JobPost jobPost = jobPostService.searchJobByPostId(postId);
+			return new ResponseEntity<>(jobPost, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+		}
+	}
+	
+	@PostMapping("/count-new-jobs-per-day")
+    public List<DailyJobCount> countNewJobsPerDay(@RequestParam String startDate, @RequestParam String endDate) {
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+
+        LocalDateTime startDateTime = start.atStartOfDay();
+        LocalDateTime endDateTime = end.atTime(23, 59, 59);
+
+        return jobPostService.getDailyJobPostCounts(startDateTime, endDateTime);
+    }
 
 }

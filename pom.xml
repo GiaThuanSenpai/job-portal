@@ -103,6 +103,11 @@
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>com.social</groupId>
+			<artifactId>social-website</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>

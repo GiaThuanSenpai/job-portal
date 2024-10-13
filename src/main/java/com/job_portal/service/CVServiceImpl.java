@@ -23,13 +23,12 @@ public class CVServiceImpl implements ICVService {
 	SeekerRepository seekerRepository;
 	@Override
 	public boolean createCV(CVDTO cvdto, UUID userId) {
-		Seeker seeker = seekerRepository.findById(userId)
-				.orElseThrow(() -> new IllegalArgumentException("Invalid Seeker ID"));
+		Optional<Seeker> seeker = seekerRepository.findById(userId);
 
 		// Build the JobPost entity
 		CV cv = new CV();
 
-		cv.setSeeker(seeker);
+		cv.setSeeker(seeker.get());
 		cv.setPathCV(cvdto.getPathCV());
 		cv.setIsMain(false);
 
@@ -46,7 +45,7 @@ public class CVServiceImpl implements ICVService {
 		Optional<CV> cv = cvRepository.findById(cvId);
 
 		if (cv.isEmpty()) {
-			throw new AllExceptions("Image not exist");
+			throw new AllExceptions("Không tìm thấy CV");
 		}
 
 		cvRepository.delete(cv.get());

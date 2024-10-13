@@ -47,9 +47,9 @@ public class EducationController {
 	public ResponseEntity<String> createEducation(@RequestHeader("Authorization") String jwt,
 			@RequestBody EducationDTO educationDTO) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 
-		boolean isCreated = educationService.createEdu(educationDTO, user.getUserId());
+		boolean isCreated = educationService.createEdu(educationDTO, user.get().getUserId());
 		if (isCreated) {
 			return new ResponseEntity<>("Education created successfully.", HttpStatus.CREATED);
 		} else {
@@ -61,7 +61,7 @@ public class EducationController {
 	public ResponseEntity<String> updateEducation(@RequestHeader("Authorization") String jwt,
 			@RequestBody EducationDTO educationDTO, @PathVariable("educationId") Integer educationId) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 
 		Optional<Education> reqEdu = educationRepository.findById(educationId);
 		if (reqEdu.isEmpty()) {
@@ -76,7 +76,7 @@ public class EducationController {
 			newEdu.setEndDate(educationDTO.getEndDate());
 			newEdu.setGpa(educationDTO.getGpa());;
 			boolean isUpdated = educationService.updateEdu(newEdu, reqEdu.get().getEducationId(),
-					user.getSeeker().getUserId());
+					user.get().getSeeker().getUserId());
 			if (isUpdated) {
 				return new ResponseEntity<>("Update Education success", HttpStatus.CREATED);
 			} else {
@@ -104,9 +104,9 @@ public class EducationController {
 	@GetMapping("/user/{userId}")
 	public ResponseEntity<Object> searchEduByUserId(@RequestHeader("Authorization") String jwt) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 		try {
-			List<Education> edus = educationService.searchEduByUserId(user.getUserId());
+			List<Education> edus = educationService.searchEduByUserId(user.get().getUserId());
 			return ResponseEntity.ok(edus);
 		} catch (AllExceptions e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());

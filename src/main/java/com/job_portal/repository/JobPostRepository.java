@@ -1,5 +1,6 @@
 package com.job_portal.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,5 +30,11 @@ public interface JobPostRepository extends JpaRepository<JobPost, UUID> {
     // Lọc các JobPost có salary giữa minSalary và maxSalary và đã phê duyệt
     public List<JobPost> findBySalaryBetweenAndIsApproveTrue(Long minSalary, Long maxSalary);
     
+    @Query("SELECT FUNCTION('date', jp.createDate) AS date, COUNT(jp) AS count " +
+            "FROM JobPost jp " +
+            "WHERE jp.createDate BETWEEN :startDate AND :endDate " +
+            "GROUP BY FUNCTION('date', jp.createDate)")
+     List<Object[]> countNewJobsPerDay(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+ }
     
-}
+

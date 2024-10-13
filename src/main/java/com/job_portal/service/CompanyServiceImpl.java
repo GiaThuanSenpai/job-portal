@@ -1,6 +1,7 @@
 package com.job_portal.service;
 
 import java.util.List;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ import com.job_portal.repository.CityRepository;
 import com.job_portal.repository.CompanyRepository;
 import com.job_portal.repository.IndustryRepository;
 import com.social.exceptions.AllExceptions;
+
 @Service
 public class CompanyServiceImpl implements ICompanyService {
 
@@ -46,10 +48,6 @@ public class CompanyServiceImpl implements ICompanyService {
 			throws AllExceptions {
 		// Tìm kiếm Company theo id
 		Optional<Company> existingCompany = companyRepository.findById(companyId);
-
-		if (existingCompany.isEmpty()) {
-			throw new AllExceptions("Company not exist with id " + companyId);
-		}
 
 		// Lấy đối tượng Company cũ
 		Company oldCompany = existingCompany.get();
@@ -94,9 +92,7 @@ public class CompanyServiceImpl implements ICompanyService {
 		// Tìm Industry mới dựa trên industryId
 		if (industryId != null) {
 			Optional<Industry> newIndustry = industryRepository.findById(industryId);
-			if (newIndustry.isEmpty()) {
-				throw new AllExceptions("Industry not exist with id " + industryId);
-			}
+	
 			// Cập nhật Industry nếu khác
 			if (!newIndustry.get().equals(oldCompany.getIndustry())) {
 				oldCompany.setIndustry(newIndustry.get());
@@ -107,9 +103,7 @@ public class CompanyServiceImpl implements ICompanyService {
 		// Tìm City mới dựa trên cityId
 		if (cityId != null) {
 			Optional<City> newCity = cityRepository.findById(cityId);
-			if (newCity.isEmpty()) {
-				throw new AllExceptions("City not exist with id " + cityId);
-			}
+	
 			// Cập nhật City nếu khác
 			if (!newCity.get().equals(oldCompany.getCity())) {
 				oldCompany.setCity(newCity.get());
@@ -131,7 +125,7 @@ public class CompanyServiceImpl implements ICompanyService {
 
 			List<Company> companies = companyRepository.findCompanyByCompanyName(companyName);
 			if (companies.isEmpty()) {
-				throw new AllExceptions("Không tìm thấy công ty nào với tên: " + companyName);
+				throw new AllExceptions("Không tìm thấy công ty nào");
 			}
 
 			return companies;
@@ -162,14 +156,14 @@ public class CompanyServiceImpl implements ICompanyService {
 
 			// Nếu không tìm thấy công ty, ném ra ngoại lệ
 			if (!companyOptional.isPresent()) {
-				throw new AllExceptions("Không tìm thấy công ty với ID: " + companyId.toString());
+				throw new AllExceptions("Không tìm thấy công ty nào");
 			}
 
 			// Trả về công ty nếu tìm thấy
 			return companyOptional.get();
 		} catch (Exception e) {
 			// Ném ra ngoại lệ nếu có lỗi xảy ra
-			throw new AllExceptions("Đã xảy ra lỗi khi tìm kiếm công ty: " + e.getMessage());
+			throw new AllExceptions(e.getMessage());
 		}
 	}
 

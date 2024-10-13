@@ -63,6 +63,9 @@ public class UserAccount {
 	@JsonIgnore
 	@OneToOne(mappedBy = "userAccount", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Company company;
+	
+	@OneToOne(mappedBy = "userAccount")
+	private ForgotPassword forgotPassword;
 
 	public UserAccount(UUID userId, UserType userType, boolean isActive, String userName, String avatar, String email,
 			String password, LocalDateTime createDate, LocalDateTime lastLogin, String otp,

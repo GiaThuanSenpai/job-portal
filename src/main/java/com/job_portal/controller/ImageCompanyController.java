@@ -1,6 +1,7 @@
 package com.job_portal.controller;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,28 +51,28 @@ public class ImageCompanyController {
 	}
 
 	@PostMapping("/create-image")
-	public ResponseEntity<String> createJobPost(@RequestHeader("Authorization") String jwt,
+	public ResponseEntity<String> createImage(@RequestHeader("Authorization") String jwt,
 			@RequestBody ImageDTO imageDTO) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 
-		boolean isCreated = imageCompanyService.createImg(imageDTO, user.getUserId());
+		boolean isCreated = imageCompanyService.createImg(imageDTO, user.get().getUserId());
 		if (isCreated) {
-			return new ResponseEntity<>("Image created successfully.", HttpStatus.CREATED);
+			return new ResponseEntity<>("Thêm hình ảnh thành công", HttpStatus.CREATED);
 		} else {
-			return new ResponseEntity<>("Failed to create Image.", HttpStatus.INTERNAL_SERVER_ERROR);
+			return new ResponseEntity<>("Thêm hình ảnh thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
 
 	@DeleteMapping("/delete-image/{imgId}")
-	public ResponseEntity<String> deleteUser(@PathVariable("imgId") Integer imgId) {
+	public ResponseEntity<String> deleteImage(@PathVariable("imgId") Integer imgId) {
 		try {
 			boolean isDeleted = imageCompanyService.deleteImg(imgId);
 			if (isDeleted) {
-				return new ResponseEntity<>("Image deleted successfully", HttpStatus.OK);
+				return new ResponseEntity<>("Xóa hình ảnh thành công", HttpStatus.OK);
 			} else {
-				return new ResponseEntity<>("Image deletion failed", HttpStatus.INTERNAL_SERVER_ERROR);
+				return new ResponseEntity<>("Xóa hình ảnh thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		} catch (Exception e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
@@ -81,9 +82,9 @@ public class ImageCompanyController {
 	@GetMapping("/searchImage")
 	public ResponseEntity<Object> searchImage(@RequestHeader("Authorization") String jwt) {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		UserAccount user = userAccountRepository.findByEmail(email);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 		try {
-			List<ImageCompany> imgs = imageCompanyService.findImgByCompanyId(user.getUserId());
+			List<ImageCompany> imgs = imageCompanyService.findImgByCompanyId(user.get().getUserId());
 			return ResponseEntity.ok(imgs);
 		} catch (AllExceptions e) {
 			// Trả về thông báo từ service
