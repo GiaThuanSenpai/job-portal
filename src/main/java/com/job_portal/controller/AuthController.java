@@ -47,6 +47,7 @@ import com.job_portal.response.ChangePassword;
 import com.job_portal.service.AccountDetailServiceImpl;
 import com.job_portal.utils.EmailUtil;
 import com.job_portal.utils.OtpUtil;
+import com.social.models.User;
 
 import jakarta.mail.MessagingException;
 
@@ -83,41 +84,41 @@ public class AuthController {
 	@Autowired
 	private ForgotPasswordRepository forgotPasswordRepository;
 	@PostMapping("/signup")
-	public ResponseEntity<String> createUserAccount(@RequestBody UserAccount userAccount) throws Exception {
-		Optional<UserAccount> isExist = userAccountRepository.findByEmail(userAccount.getEmail());
-		if (isExist != null) {
-			throw new Exception("Email này đã được sử dụng ở tài khoản khác");
-		}
-		String otp = otpUtil.generateOtp();
-		try {
-			emailUtil.sendOtpEmail(userAccount.getEmail(), otp);
-		} catch (MessagingException e) {
-			throw new RuntimeException("Không thể gửi OTP, vui lòng thử lại");
-		}
+	public ResponseEntity<String> createUserAccount(@RequestBody UserAccount userAccount) {
+	    // Kiểm tra xem email đã tồn tại trong hệ thống hay chưa
+	    Optional<UserAccount> isExist = userAccountRepository.findByEmail(userAccount.getEmail());
 
-		Optional<UserType> userType = userTypeRepository.findById(userAccount.getUserType().getUserTypeId());
-		UserAccount newUser = new UserAccount();
-		newUser.setUserId(UUID.randomUUID());
-		newUser.setUserType(userType.get());
-		newUser.setActive(false);
-		newUser.setEmail(userAccount.getEmail());
-		newUser.setPassword(passwordEncoder.encode(userAccount.getPassword()));
-		newUser.setUserName(userAccount.getUserName());
-		newUser.setCreateDate(LocalDateTime.now());
-		newUser.setOtp(otp);
-		newUser.setOtpGeneratedTime(LocalDateTime.now());
+	    // Nếu tài khoản với email đã tồn tại, trả về thông báo lỗi với mã trạng thái 409 (Conflict)
+	    if (isExist.isPresent()) {
+	        return ResponseEntity.status(HttpStatus.CONFLICT).body("Email này đã được sử dụng ở tài khoản khác");
+	    }
 
-//		UserAccount savedUser = userAccountRepository.save(newUser);
-//
-//		Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser.getEmail(),
-//				savedUser.getPassword());
-//
-//		String token = JwtProvider.generateToken(authentication);
-//		AuthResponse res = new AuthResponse(token, "Register Success");
+	    // Nếu email chưa tồn tại, tiếp tục với quá trình tạo tài khoản
+	    String otp = otpUtil.generateOtp();
+	    try {
+	        emailUtil.sendOtpEmail(userAccount.getEmail(), otp);
+	    } catch (MessagingException e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Không thể gửi OTP, vui lòng thử lại");
+	    }
 
-		userAccountRepository.save(newUser);
+	    Optional<UserType> userType = userTypeRepository.findById(userAccount.getUserType().getUserTypeId());
+	    
+	    // Tạo một tài khoản người dùng mới
+	    UserAccount newUser = new UserAccount();
+	    newUser.setUserId(UUID.randomUUID());
+	    newUser.setUserType(userType.orElse(null)); // Xử lý trường hợp userType không tìm thấy
+	    newUser.setActive(false);
+	    newUser.setEmail(userAccount.getEmail());
+	    newUser.setPassword(passwordEncoder.encode(userAccount.getPassword()));
+	    newUser.setUserName(userAccount.getUserName());
+	    newUser.setCreateDate(LocalDateTime.now());
+	    newUser.setOtp(otp);
+	    newUser.setOtpGeneratedTime(LocalDateTime.now());
 
-		return ResponseEntity.ok("Vui lòng check email để nhận mã đăng ký");
+	    // Lưu tài khoản mới vào database
+	    userAccountRepository.save(newUser);
+
+	    return ResponseEntity.ok("Vui lòng check email để nhận mã đăng ký");
 	}
 
 	@PutMapping("/verify-account")
@@ -184,14 +185,20 @@ public class AuthController {
 	@PostMapping("/login")
 	public AuthResponse signin(@RequestBody LoginDTO login) {
 		AuthResponse res;
-		Optional<UserAccount> user = userAccountRepository.findByEmail(login.getEmail());
-		if (!user.get().isActive()) {
-			return res = new AuthResponse("", "Tài khoản của bạn chưa được xác thực");
+		Optional<UserAccount> userOpt = userAccountRepository.findByEmail(login.getEmail());
+		if (userOpt.isEmpty()) {
+		    throw new UsernameNotFoundException("Email không tồn tại");
 		}
+		
+		UserAccount user = userOpt.get();
+		if (!user.isActive()) {
+		    return new AuthResponse("", "Tài khoản của bạn chưa được xác thực");
+		}
+
 		Authentication authentication = authenticate(login.getEmail(), login.getPassword());
 		String token = JwtProvider.generateToken(authentication);
-		user.get().setLastLogin(LocalDateTime.now());
-		userAccountRepository.save(user.get());
+		user.setLastLogin(LocalDateTime.now());
+		userAccountRepository.save(user);
 		res = new AuthResponse(token, "Đăng nhập thành công");
 
 		return res;
@@ -200,11 +207,11 @@ public class AuthController {
 	private Authentication authenticate(String email, String password) {
 		UserDetails userDetails = accountDetailService.loadUserByUsername(email);
 		if (userDetails == null) {
-			throw new BadCredentialsException("Tài khoản không hợp lệ");
+			throw new BadCredentialsException("Tài khoản hoặc mật khẩu không đúng");
 
 		}
 		if (!passwordEncoder.matches(password, userDetails.getPassword())) {
-			throw new BadCredentialsException("Password không đúng");
+			throw new BadCredentialsException("Tài khoản hoặc mật khẩu không đúng");
 
 		}
 		return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

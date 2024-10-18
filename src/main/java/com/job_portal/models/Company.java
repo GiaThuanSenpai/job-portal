@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -70,6 +70,8 @@ public class Company {
 	@ManyToMany
 	private List<Seeker> follows = new ArrayList<>();
 	
+	@OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<JobPost> jobPosts = new ArrayList<>();
 	@OneToOne
     @MapsId
     @JoinColumn(name = "user_id")

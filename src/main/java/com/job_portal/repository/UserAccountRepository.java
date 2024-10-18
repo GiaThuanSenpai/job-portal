@@ -1,6 +1,5 @@
 package com.job_portal.repository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +10,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.job_portal.DTO.DailyAccountCount;
 import com.job_portal.models.UserAccount;
 
 import jakarta.transaction.Transactional;
@@ -34,5 +32,4 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
 			+ "ORDER BY DATE(u.create_date)", nativeQuery = true)
 	List<Object[]> countNewAccountsPerDay(@Param("startDate") LocalDateTime startDate,
 			@Param("endDate") LocalDateTime endDate);
-
 }

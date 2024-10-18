@@ -34,14 +34,14 @@ public class ApplyJobController {
 	@Autowired
 	IApplyJobService applyJobService;
 	@Autowired
-	UserAccountRepository userAccountRepository; 
+	UserAccountRepository userAccountRepository;
 
 	@PostMapping("/create-apply/{postId}")
-	public ResponseEntity<String> createApply(@RequestBody ApplyJobDTO applyDTO, @RequestHeader("Authorization") String jwt,
-			@PathVariable("postId") UUID postId) throws AllExceptions {
+	public ResponseEntity<String> createApply(@RequestBody ApplyJobDTO applyDTO,
+			@RequestHeader("Authorization") String jwt, @PathVariable("postId") UUID postId) throws AllExceptions {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
 		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
-		ApplyJob apply = convertToEntity(applyDTO, user.get().getUserId(), postId );
+		ApplyJob apply = convertToEntity(applyDTO, user.get().getUserId(), postId);
 		boolean isCreated = applyJobService.createApplyJob(apply);
 		if (isCreated) {
 			return new ResponseEntity<>("Nộp đơn thành công", HttpStatus.CREATED);
@@ -49,10 +49,41 @@ public class ApplyJobController {
 			return new ResponseEntity<>("Nộp đơn thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+
+	@PostMapping("/setApprove/{postId}/{userId}")
+	public ResponseEntity<String> updateApprove(@RequestHeader("Authorization") String jwt,
+			@PathVariable("postId") UUID postId, @PathVariable("userId") UUID userId) throws AllExceptions {
+		String email = JwtProvider.getEmailFromJwtToken(jwt);
+		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
+
+		if (user.isEmpty()) {
+			return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+		} else if (user.get().getUserType().getUserTypeId() == 1) { 
+			Optional<ApplyJob> apply = applyJobRepository.findByPostIdAndUserId(postId, user.get().getUserId());
+
+			if (apply.isEmpty()) {
+				return new ResponseEntity<>("Application not found", HttpStatus.NOT_FOUND);
+			}
+
+			ApplyJob existingApply = apply.get();
+			existingApply.setSave(true);
+
+			try {
+				applyJobRepository.save(existingApply);
+				return new ResponseEntity<>("Approve successfully", HttpStatus.OK);
+			} catch (Exception e) {
+				// Log lỗi nếu cần thiết
+				return new ResponseEntity<>("Approve failed", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		} else {
+			return new ResponseEntity<>("User does not have permission to approve", HttpStatus.FORBIDDEN);
+		}
+	}
+
 	@PostMapping("/update-apply/{postId}")
-	public ResponseEntity<String> updateApply(@RequestBody ApplyJobDTO applyDTO, @RequestHeader("Authorization") String jwt,
-			@PathVariable("postId") UUID postId) throws AllExceptions {
-		
+	public ResponseEntity<String> updateApply(@RequestBody ApplyJobDTO applyDTO,
+			@RequestHeader("Authorization") String jwt, @PathVariable("postId") UUID postId) throws AllExceptions {
+
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
 		Optional<UserAccount> user = userAccountRepository.findByEmail(email);
 		ApplyJob apply = convertToEntity(applyDTO, user.get().getUserId(), postId);
@@ -63,25 +94,24 @@ public class ApplyJobController {
 			return new ResponseEntity<>("Failed to update.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
-	
+
 	@GetMapping("/get-all")
 	public ResponseEntity<List<ApplyJob>> getApply() {
 		List<ApplyJob> apply = applyJobRepository.findAll();
 		return new ResponseEntity<>(apply, HttpStatus.OK);
 	}
-	
+
 	private ApplyJob convertToEntity(ApplyJobDTO applyDTO, UUID userId, UUID postId) {
-        ApplyJob apply = new ApplyJob();
-        apply.setPostId(postId);
-        apply.setUserId(userId);
-        apply.setPathCV(applyDTO.getPathCV());
-        apply.setApplyDate(LocalDateTime.now());
-        apply.setFullName(applyDTO.getFullName());
-        apply.setDescription(applyDTO.getDescription());
-        apply.setEmail(applyDTO.getEmail());
-        apply.setSave(false);
-        return apply;
-    }
+		ApplyJob apply = new ApplyJob();
+		apply.setPostId(postId);
+		apply.setUserId(userId);
+		apply.setPathCV(applyDTO.getPathCV());
+		apply.setApplyDate(LocalDateTime.now());
+		apply.setFullName(applyDTO.getFullName());
+		apply.setDescription(applyDTO.getDescription());
+		apply.setEmail(applyDTO.getEmail());
+		apply.setSave(false);
+		return apply;
+	}
 
 }

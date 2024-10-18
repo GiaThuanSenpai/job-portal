@@ -1,10 +1,12 @@
 package com.job_portal.controller;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,9 +24,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.job_portal.DTO.CompanyDTO;
 
 import com.job_portal.config.JwtProvider;
+import com.job_portal.models.ApplyJob;
+import com.job_portal.models.City;
 import com.job_portal.models.Company;
 import com.job_portal.models.JobPost;
 import com.job_portal.models.UserAccount;
+import com.job_portal.repository.ApplyJobRepository;
 import com.job_portal.repository.CompanyRepository;
 import com.job_portal.repository.UserAccountRepository;
 import com.job_portal.service.ICompanyService;
@@ -41,11 +46,14 @@ public class CompanyController {
 
 	@Autowired
 	private UserAccountRepository userAccountRepository;
+	
+	@Autowired
+	private ApplyJobRepository applyJobRepository;
 
 	@GetMapping("/get-all")
-	public ResponseEntity<List<Company>> getCompany() {
-		List<Company> companies = companyRepository.findAll();
-		return new ResponseEntity<>(companies, HttpStatus.OK);
+	public ResponseEntity<List<CompanyDTO>> getAllCompanies() {
+	    List<CompanyDTO> res = companyRepository.findCompaniesWithSavedApplications();
+	    return new ResponseEntity<>(res, HttpStatus.OK);
 	}
 
 	@PutMapping("/update-company")
@@ -66,7 +74,7 @@ public class CompanyController {
 		newCompany.setLogo(company.getLogo());
 		newCompany.setContact(company.getContact());
 		newCompany.setEmail(company.getEmail());
-		newCompany.setEstablishedTime(company.getEstablished_date());
+		newCompany.setEstablishedTime(company.getEstablishedDate());
 
 		boolean isUpdated = companyService.updateCompany(newCompany, reqCompany.get().getCompanyId(),
 				company.getIndustryId(), company.getCityId());

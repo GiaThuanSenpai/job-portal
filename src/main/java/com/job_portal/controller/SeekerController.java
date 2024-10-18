@@ -2,6 +2,7 @@ package com.job_portal.controller;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.job_portal.DTO.SeekerDTO;
 import com.job_portal.config.JwtProvider;
+import com.job_portal.models.JobPost;
 import com.job_portal.models.Seeker;
 import com.job_portal.models.UserAccount;
 import com.job_portal.repository.SeekerRepository;
@@ -57,6 +59,16 @@ public class SeekerController {
 					.body("Đã xảy ra lỗi trong quá trình xử lý yêu cầu.");
 		}
 	}
+	@GetMapping("/search/{userId}")
+	public ResponseEntity<Seeker> getSeekerById(@PathVariable("userId") UUID userId) throws AllExceptions {
+		try {
+			Seeker seeker = seekerService.findSeekerById(userId);
+			return new ResponseEntity<>(seeker, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+		}
+	}
+	
 
 	@GetMapping("/searchByIndustry")
 	public ResponseEntity<Object> searchSeekersByIndustry(@RequestParam("industryName") String industryName) {
