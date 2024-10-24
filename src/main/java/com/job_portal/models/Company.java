@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -64,14 +66,18 @@ public class Company {
 	@Column(name = "established_time", length = 50)
 	private LocalDate establishedTime;
 	
+	@JsonIgnore
 	@OneToMany
 	private List<Review> reviews = new ArrayList<>();
 	
+	@JsonIgnore
 	@ManyToMany
 	private List<Seeker> follows = new ArrayList<>();
 	
+	@JsonIgnore
 	@OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<JobPost> jobPosts = new ArrayList<>();
+	
 	@OneToOne
     @MapsId
     @JoinColumn(name = "user_id")

@@ -45,7 +45,7 @@ public class SeekerController {
 		return new ResponseEntity<>(seekers, HttpStatus.OK);
 	}
 
-	@GetMapping("/searchByName")
+	@GetMapping("/search-by-name")
 	public ResponseEntity<Object> searchSeekersByName(@RequestParam("userName") String userName) {
 		try {
 			List<Seeker> seekers = seekerService.searchSeekerByName(userName);
@@ -70,7 +70,7 @@ public class SeekerController {
 	}
 	
 
-	@GetMapping("/searchByIndustry")
+	@GetMapping("/search-by-industry")
 	public ResponseEntity<Object> searchSeekersByIndustry(@RequestParam("industryName") String industryName) {
 		try {
 			List<Seeker> seekers = seekerService.searchSeekerByIndustry(industryName);

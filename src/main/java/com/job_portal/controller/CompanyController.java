@@ -47,12 +47,16 @@ public class CompanyController {
 	@Autowired
 	private UserAccountRepository userAccountRepository;
 	
-	@Autowired
-	private ApplyJobRepository applyJobRepository;
 
 	@GetMapping("/get-all")
 	public ResponseEntity<List<CompanyDTO>> getAllCompanies() {
 	    List<CompanyDTO> res = companyRepository.findCompaniesWithSavedApplications();
+	    return new ResponseEntity<>(res, HttpStatus.OK);
+	}
+	
+	@GetMapping("/find-all")
+	public ResponseEntity<List<Company>> findAllCompanies() {
+	    List<Company> res = companyRepository.findAll();
 	    return new ResponseEntity<>(res, HttpStatus.OK);
 	}
 
@@ -132,21 +136,25 @@ public class CompanyController {
 	}
 
 	@PutMapping("/follow/{companyId}")
-	public ResponseEntity<Map<String, Object>> followCompany(@PathVariable("companyId") UUID companyId,
-			@RequestHeader("Authorization") String jwt) throws Exception {
+	public ResponseEntity<Map<String, Object>> followCompany(
+	        @PathVariable("companyId") UUID companyId,
+	        @RequestHeader("Authorization") String jwt) throws Exception {
 
-		String email = JwtProvider.getEmailFromJwtToken(jwt);
-		Optional<UserAccount> reqUser = userAccountRepository.findByEmail(email);
+	    String email = JwtProvider.getEmailFromJwtToken(jwt);
+	    Optional<UserAccount> reqUser = userAccountRepository.findByEmail(email);
 
-		Company company = companyService.followCompany(companyId, reqUser.get().getUserId());
+	    // Kiểm tra nếu user không tồn tại
+	    if (reqUser.isEmpty()) {
+	        throw new Exception("Người dùng không tồn tại");
+	    }
 
-		// Create a response body
-		Map<String, Object> response = new HashMap<>();
-		response.put("message", "Theo dõi công ty thành công");
-		response.put("company", company);
+	    // Gọi service và nhận về kết quả hành động follow/unfollow
+	    Map<String, Object> result = companyService.followCompany(companyId, reqUser.get().getUserId());
 
-		return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
+	    // Trả về phản hồi với message theo kết quả nhận được từ service
+	    return new ResponseEntity<>(result, HttpStatus.ACCEPTED);
 	}
+
 	
 	@GetMapping("/profile-company/{companyId}")
 	public ResponseEntity<Company> getCompanyById(@PathVariable("companyId") UUID companyId) throws AllExceptions {

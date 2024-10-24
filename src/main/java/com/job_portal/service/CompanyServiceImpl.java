@@ -1,7 +1,8 @@
 package com.job_portal.service;
 
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -182,17 +183,26 @@ public class CompanyServiceImpl implements ICompanyService {
 	}
 
 	@Override
-	public Company followCompany(UUID companyId, UUID userId) throws AllExceptions {
-		
-		Company company = findCompanyById(companyId);
-		Seeker seeker = seekerService.findSeekerById(userId);
+	public Map<String, Object> followCompany(UUID companyId, UUID userId) throws AllExceptions {
+	    
+	    Company company = findCompanyById(companyId);
+	    Seeker seeker = seekerService.findSeekerById(userId);
 
-		if (company.getFollows().contains(seeker)) {
-			company.getFollows().remove(seeker);
-		} else {
-			company.getFollows().add(seeker);
-		}
-		return companyRepository.save(company);
+	    Map<String, Object> result = new HashMap<>();
+	    
+	    if (company.getFollows().contains(seeker)) {
+	        company.getFollows().remove(seeker);
+	        result.put("action", "unfollow");
+	        result.put("message", "Bỏ theo dõi công ty thành công");
+	    } else {
+	        company.getFollows().add(seeker);
+	        result.put("action", "follow");
+	        result.put("message", "Theo dõi công ty thành công");
+	    }
+
+	    companyRepository.save(company);
+	    return result;
 	}
+
 
 }

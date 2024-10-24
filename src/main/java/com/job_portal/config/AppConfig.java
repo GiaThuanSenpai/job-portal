@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -22,6 +23,11 @@ import jakarta.servlet.http.HttpServletRequest;
 @Configuration
 @EnableWebSecurity
 public class AppConfig {
+	
+	@Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
     
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

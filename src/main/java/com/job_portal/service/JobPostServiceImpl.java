@@ -1,5 +1,7 @@
 package com.job_portal.service;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,12 +18,16 @@ import com.job_portal.models.City;
 import com.job_portal.models.Company;
 import com.job_portal.models.Industry;
 import com.job_portal.models.JobPost;
+import com.job_portal.models.SearchHistory;
 import com.job_portal.models.Seeker;
 import com.job_portal.models.Skills;
 import com.job_portal.repository.CityRepository;
 import com.job_portal.repository.CompanyRepository;
 import com.job_portal.repository.JobPostRepository;
+import com.job_portal.repository.SearchHistoryRepository;
+import com.job_portal.repository.SeekerRepository;
 import com.job_portal.repository.SkillRepository;
+import com.opencsv.CSVWriter;
 import com.social.exceptions.AllExceptions;
 
 @Service
@@ -33,17 +39,25 @@ public class JobPostServiceImpl implements IJobPostService {
 	CityRepository cityRepository;
 	@Autowired
 	CompanyRepository companyRepository;
-	
+
 	@Autowired
 	private SkillRepository skillRepository;
+
+	@Autowired
+	private SearchHistoryRepository searchHistoryRepository;
+
+	@Autowired
+	private SeekerRepository seekerRepository;
+	@Autowired
+	ISearchHistoryService searchHistoryService;
+
+	String filePath = "D:\\\\Job_portal-main\\\\search_history.csv";
 
 	@Override
 	public boolean createJob(JobPostDTO jobPostDTO, UUID companyId) {
 		Optional<City> city = cityRepository.findById(jobPostDTO.getCityId());
 
-
 		Optional<Company> company = companyRepository.findById(companyId);
-
 
 		// Build the JobPost entity
 		JobPost jobPost = new JobPost();
@@ -63,16 +77,16 @@ public class JobPostServiceImpl implements IJobPostService {
 		jobPost.setCity(city.get());
 		jobPost.setApprove(false);
 		jobPost.setNiceToHaves(jobPostDTO.getNiceToHaves());
-		
-		 // Liên kết với Skills nếu có
-        if (jobPostDTO.getSkillIds() != null && !jobPostDTO.getSkillIds().isEmpty()) {
-            List<Skills> skillsList = new ArrayList<>();
-            for (Integer skillId : jobPostDTO.getSkillIds()) {
-                Optional<Skills> skillOpt = skillRepository.findById(skillId);
-                skillsList.add(skillOpt.get());
-            }
-            jobPost.setSkills(skillsList);
-        }
+
+		// Liên kết với Skills nếu có
+		if (jobPostDTO.getSkillIds() != null && !jobPostDTO.getSkillIds().isEmpty()) {
+			List<Skills> skillsList = new ArrayList<>();
+			for (Integer skillId : jobPostDTO.getSkillIds()) {
+				Optional<Skills> skillOpt = skillRepository.findById(skillId);
+				skillsList.add(skillOpt.get());
+			}
+			jobPost.setSkills(skillsList);
+		}
 
 		// Save the JobPost entity
 		try {
@@ -96,7 +110,7 @@ public class JobPostServiceImpl implements IJobPostService {
 	}
 
 	@Override
-	public boolean updateJob(JobPostDTO jobPostDTO,UUID postId) throws AllExceptions {
+	public boolean updateJob(JobPostDTO jobPostDTO, UUID postId) throws AllExceptions {
 		// Tìm kiếm Company theo id
 		Optional<JobPost> existingJob = jobPostRepository.findById(postId);
 
@@ -165,7 +179,7 @@ public class JobPostServiceImpl implements IJobPostService {
 			oldJob.setStatus(jobPostDTO.getStatus());
 			isUpdated = true;
 		}
-		
+
 		if (jobPostDTO.getNiceToHaves() != null) {
 			oldJob.setNiceToHaves(jobPostDTO.getNiceToHaves());
 			isUpdated = true;
@@ -198,13 +212,26 @@ public class JobPostServiceImpl implements IJobPostService {
 	}
 
 	@Override
-	public List<JobPost> searchJobByJobName(String title) throws AllExceptions {
+	public List<JobPost> searchJobByJobName(String title, UUID userId) throws AllExceptions {
 		try {
+			// Chỉ lưu lịch sử tìm kiếm nếu có userId (người dùng seeker)
+			if (userId != null) {
+				Seeker seeker = seekerRepository.findById(userId).orElse(null);
+				SearchHistory searchHistory = new SearchHistory();
+				searchHistory.setSeeker(seeker);
+				searchHistory.setSearchQuery(title);
+				searchHistory.setSearchDate(LocalDateTime.now());
+				searchHistoryRepository.save(searchHistory);
+
+			}
+
+			// Tìm kiếm công việc theo tên
 			List<JobPost> jobs = jobPostRepository.findJobByJobName(title);
+
 			if (jobs.isEmpty()) {
 				throw new AllExceptions("Không tìm thấy công việc nào");
 			}
-
+			searchHistoryService.exportSearchHistoryToCSV(filePath);
 			return jobs;
 		} catch (Exception e) {
 			throw new AllExceptions(e.getMessage());
@@ -217,7 +244,7 @@ public class JobPostServiceImpl implements IJobPostService {
 
 			List<JobPost> jobs = jobPostRepository.findJobByExperience(experience);
 			if (jobs.isEmpty()) {
-				throw new AllExceptions("Không tìm thấy công viêc nào với kinhg nghiệm: " + experience);
+				throw new AllExceptions("Không tìm thấy công viêc nào với kinh nghiệm nào");
 			}
 
 			return jobs;
@@ -309,18 +336,44 @@ public class JobPostServiceImpl implements IJobPostService {
 	public JobPost searchJobByPostId(UUID postId) throws AllExceptions {
 		Optional<JobPost> jobPost = jobPostRepository.findById(postId);
 		return jobPost.get();
-		
+
 	}
+
 	public List<DailyJobCount> getDailyJobPostCounts(LocalDateTime startDate, LocalDateTime endDate) {
-        List<Object[]> results = jobPostRepository.countNewJobsPerDay(startDate, endDate);
-        List<DailyJobCount> dailyJobPostCounts = new ArrayList<>();
+		List<Object[]> results = jobPostRepository.countNewJobsPerDay(startDate, endDate);
+		List<DailyJobCount> dailyJobPostCounts = new ArrayList<>();
 
-        for (Object[] result : results) {
-            LocalDate date = ((java.sql.Date) result[0]).toLocalDate();
-            Long count = ((Number) result[1]).longValue();
-            dailyJobPostCounts.add(new DailyJobCount(date, count));
-        }
+		for (Object[] result : results) {
+			LocalDate date = ((java.sql.Date) result[0]).toLocalDate();
+			Long count = ((Number) result[1]).longValue();
+			dailyJobPostCounts.add(new DailyJobCount(date, count));
+		}
 
-        return dailyJobPostCounts;
-    }
+		return dailyJobPostCounts;
+	}
+
+	@Override
+	public List<JobPost> findByIsApproveTrue() {
+		List<JobPost> jobPost = jobPostRepository.findByIsApproveTrueAndExpireDateGreaterThanEqual(LocalDateTime.now());
+		return jobPost;
+	}
+
+	@Override
+	public void exportJobPostToCSV(String filePath) throws IOException {
+		List<JobPost> jobPosts = jobPostRepository.findByIsApproveTrueAndExpireDateGreaterThanEqual(LocalDateTime.now());
+		try (CSVWriter writer = new CSVWriter(new FileWriter(filePath))) {
+			// Viết tiêu đề
+			String[] header = { "postId", "title", "description", "location", "salary", "experience", "typeOfWork" };
+			writer.writeNext(header);
+
+			// Viết dữ liệu
+			for (JobPost jobPost : jobPosts) {
+				String[] data = { jobPost.getPostId().toString(),
+						jobPost.getTitle(), jobPost.getDescription(), jobPost.getLocation(), jobPost.getSalary().toString(), jobPost.getExperience(),
+						jobPost.getTypeOfWork()};
+				writer.writeNext(data);
+			}
+		}
+	}
+
 }
